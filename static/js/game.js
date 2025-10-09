@@ -1,4 +1,3 @@
-
 // General Variables 
 const actualThemePath = './static/themes/default/pieces/';
 const pieceImages = [
@@ -73,10 +72,12 @@ function fenToBoardArray(fen) {
     return board;
 }
 
+let allowedMovesPendingToConfirm = [];
+
 function renderChessBoard(squareSize = 64, boardArrayParam = null) {
     // Set CSS variables for square and label size
     document.documentElement.style.setProperty('--square-size', squareSize + 'px');
-    document.documentElement.style.setProperty('--label-size', Math.round(squareSize * 0.8) + 'px');
+    document.documentElement.style.setProperty('--label-size', Math.round(squareSize * 0.4) + 'px');
     const container = document.getElementById('chess-board-container');
     container.innerHTML = '';
     const files = ['a','b','c','d','e','f','g','h'];
@@ -100,7 +101,7 @@ function renderChessBoard(squareSize = 64, boardArrayParam = null) {
         // Squares
         for (let col = 0; col < 8; col++) {
             const square = document.createElement('div');
-            square.className = 'chess-square ' + ((row + col) % 2 === 0 ? 'white' : 'black');
+            square.className = 'chess-square ' + ((row + col) % 2 === 0 ? 'white' : 'black') + " grabbing";
             square.dataset.row = boardRowIdx;
             square.dataset.col = col;
 
@@ -125,6 +126,22 @@ function renderChessBoard(squareSize = 64, boardArrayParam = null) {
                 }
             });
 
+            // Touch support for drop
+            square.addEventListener('touchend', function(e) {
+                if (draggedFrom) {
+                    const to = { row: parseInt(square.dataset.row), col: parseInt(square.dataset.col) };
+                    if (draggedFrom.row !== to.row || draggedFrom.col !== to.col) {
+                        boardArray[to.row][to.col] = boardArray[draggedFrom.row][draggedFrom.col];
+                        boardArray[draggedFrom.row][draggedFrom.col] = null;
+                        if (boardArray[to.row][to.col]) {
+                            logMove(draggedFrom, to, boardArray[to.row][to.col]);
+                        }
+                        draggedFrom = null;
+                        renderChessBoard(squareSize, boardArray);
+                    }
+                }
+            });
+
             // If boardArray is provided, show piece image if present
             if (boardArray && boardArray[boardRowIdx] && boardArray[boardRowIdx][col]) {
                 const piece = boardArray[boardRowIdx][col];
@@ -135,11 +152,37 @@ function renderChessBoard(squareSize = 64, boardArrayParam = null) {
                 img.style.height = '100%';
                 img.draggable = true;
                 img.addEventListener('dragstart', function(e) {
+                    e.dataTransfer.setDragImage(img, img.width / 2, img.height / 2);
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.dropEffect = 'move';
+                    e.dataTransfer.setData('text/plain', 'Moviendo pieza');
                     draggedFrom = { row: boardRowIdx, col: col };
+                    // We should now calculate and render the allowed moves for this piece
+                    allowedMovesPendingToConfirm = allowedMoves({row:boardRowIdx, col:col}, piece);
+                    
+                    renderAllowedMoves(allowedMovesPendingToConfirm);
                 });
+
+                // Touch support for drag
+                img.addEventListener('touchstart', function(e) {
+                    draggedFrom = { row: boardRowIdx, col: col };
+                    img.classList.add('dragging');
+                    e.stopPropagation();
+                });
+                img.addEventListener('touchend', function(e) {
+                    img.classList.remove('dragging');
+                    draggedFrom = null;
+                });
+                img.addEventListener('touchmove', function(e) {
+                    // Prevent scrolling while dragging
+                    e.preventDefault();
+                    // Optionally, you could implement a visual drag image here
+                });
+
                 square.appendChild(img);
             }
             container.appendChild(square);
+                
         }
         // Right label
         const rightLabel = document.createElement('div');
@@ -157,6 +200,204 @@ function renderChessBoard(squareSize = 64, boardArrayParam = null) {
     }
     container.appendChild(document.createElement('div'));
 }
+
+// Renders the allowed moves as dots on the board
+function renderAllowedMoves(moves) {
+    clearAllowedMoves();
+    if (moves.length === 0) return; 
+    const container = document.getElementById('chess-board-container');
+    moves.forEach(move => {
+        const square = container.querySelector(`.chess-square[data-row='${move.row}'][data-col='${move.col}']`);
+        if (square) {
+            const dot = document.createElement('img');
+            dot.src = '/static/themes/default/pieces/slot.png';
+            dot.alt = "Allowed Move!"
+            dot.className = 'move-dot';
+            square.appendChild(dot);
+        }
+    });
+}
+
+// Pawn moves generator
+function getPawnMoves(from, color) {
+    const moves = [];
+    const dir = color === 'w' ? -1 : 1;
+    const startRow = color === 'w' ? 6 : 1;
+    const enemy = color === 'w' ? 'b' : 'w';
+
+    // Forward move
+    if (boardArray[from.row + dir] && boardArray[from.row + dir][from.col] === null) {
+        moves.push({ row: from.row + dir, col: from.col });
+        // Double move from starting position
+        if (from.row === startRow && boardArray[from.row + 2 * dir][from.col] === null) {
+            moves.push({ row: from.row + 2 * dir, col: from.col });
+        }
+    }
+    // Captures
+    for (let dc of [-1, 1]) {
+        const r = from.row + dir, c = from.col + dc;
+        if (r >= 0 && r < 8 && c >= 0 && c < 8 && boardArray[r][c] && boardArray[r][c].name[0] === enemy) {
+            moves.push({ row: r, col: c });
+        }
+    }
+    return moves;
+}
+
+// Rook moves generator
+function getRookMoves(from, color) {
+    const moves = [];
+    const enemy = color === 'w' ? 'b' : 'w';
+    // Up
+    for (let r = from.row - 1; r >= 0; r--) {
+        if (boardArray[r][from.col] === null) {
+            moves.push({ row: r, col: from.col });
+        } else {
+            if (boardArray[r][from.col].name[0] === enemy) moves.push({ row: r, col: from.col });
+            break;
+        }
+    }
+    // Down
+    for (let r = from.row + 1; r < 8; r++) {
+        if (boardArray[r][from.col] === null) {
+            moves.push({ row: r, col: from.col });
+        } else {
+            if (boardArray[r][from.col].name[0] === enemy) moves.push({ row: r, col: from.col });
+            break;
+        }
+    }
+    // Left
+    for (let c = from.col - 1; c >= 0; c--) {
+        if (boardArray[from.row][c] === null) {
+            moves.push({ row: from.row, col: c });
+        } else {
+            if (boardArray[from.row][c].name[0] === enemy) moves.push({ row: from.row, col: c });
+            break;
+        }
+    }
+    // Right
+    for (let c = from.col + 1; c < 8; c++) {
+        if (boardArray[from.row][c] === null) {
+            moves.push({ row: from.row, col: c });
+        } else {
+            if (boardArray[from.row][c].name[0] === enemy) moves.push({ row: from.row, col: c });
+            break;
+        }
+    }
+    return moves;
+}
+
+// Bishop moves generator
+function getBishopMoves(from, color) {
+    const moves = [];
+    const enemy = color === 'w' ? 'b' : 'w';
+    // Four diagonals
+    for (let dr = -1; dr <= 1; dr += 2) {
+        for (let dc = -1; dc <= 1; dc += 2) {
+            let r = from.row + dr, c = from.col + dc;
+            while (r >= 0 && r < 8 && c >= 0 && c < 8) {
+                if (boardArray[r][c] === null) {
+                    moves.push({ row: r, col: c });
+                } else {
+                    if (boardArray[r][c].name[0] === enemy) moves.push({ row: r, col: c });
+                    break;
+                }
+                r += dr;
+                c += dc;
+            }
+        }
+    }
+    return moves;
+}
+
+// Queen moves generator
+function getQueenMoves(from, color) {
+    // Queen = Rook + Bishop
+    return [
+        ...getRookMoves(from, color),
+        ...getBishopMoves(from, color)
+    ];
+}
+
+// Knight moves generator
+function getKnightMoves(from, color) {
+    const moves = [];
+    const enemy = color === 'w' ? 'b' : 'w';
+    const knightJumps = [
+        [-2, -1], [-2, 1], [-1, -2], [-1, 2],
+        [1, -2], [1, 2], [2, -1], [2, 1]
+    ];
+    for (const [dr, dc] of knightJumps) {
+        const r = from.row + dr, c = from.col + dc;
+        if (r >= 0 && r < 8 && c >= 0 && c < 8) {
+            if (boardArray[r][c] === null || boardArray[r][c].name[0] === enemy) {
+                moves.push({ row: r, col: c });
+            }
+        }
+    }
+    return moves;
+}
+
+// King moves generator
+function getKingMoves(from, color) {
+    const moves = [];
+    const enemy = color === 'w' ? 'b' : 'w';
+    for (let dr = -1; dr <= 1; dr++) {
+        for (let dc = -1; dc <= 1; dc++) {
+            if (dr === 0 && dc === 0) continue;
+            const r = from.row + dr, c = from.col + dc;
+            if (r >= 0 && r < 8 && c >= 0 && c < 8) {
+                if (boardArray[r][c] === null || boardArray[r][c].name[0] === enemy) {
+                    moves.push({ row: r, col: c });
+                }
+            }
+        }
+    }
+    // Castling not implemented here
+    return moves;
+}
+
+// Calculates the available squares for a piece having its position and type calculating the boardArray positions
+function allowedMoves(from, piece) {
+    const moves = [];
+    if (piece === null) return moves;
+    const color = piece.name[0];
+    switch (piece.name[1]) {
+        case 'P': // Pawn
+        case 'p':
+            return getPawnMoves(from, color);
+        case 'R': // Rook
+        case 'r':
+            return getRookMoves(from, color);
+        case 'B': // Bishop
+        case 'b':
+            return getBishopMoves(from, color);
+        case 'Q': // Queen
+        case 'q':
+            return getQueenMoves(from, color);
+        case 'N': // Knight
+        case 'n':
+            return getKnightMoves(from, color);
+        case 'K': // King
+        case 'k':
+            return getKingMoves(from, color);
+        case 'P': // Pawn
+        case 'p':
+            return getPawnMoves(from, color);
+        case 'R': // Rook
+        case 'r':
+            return getRookMoves(from, color);
+        default: break;
+    }
+    return moves;
+}
+
+// The following function will clear the allowed moves from the board one no pice is being dragged
+function clearAllowedMoves(){
+    document.querySelectorAll('.move-dot').forEach(dot=>{
+        dot.remove();
+    });
+}       
+
 
 // 2) - Auxiliary functions 
 // -----------------------------------------------------------------------------
@@ -257,6 +498,32 @@ function updateCastlingRights(from, to, piece) {
     if (castlingString === '') castlingString = '-';
 }
 
+// This function calculates en passant target square based on the last move
+function updateEnPassantTarget(from, to, piece) {
+    if (piece.name === 'wP' && from.row === 6 && to.row === 4) {
+        // White pawn moved two squares
+        const files = ['a','b','c','d','e','f','g','h'];
+        enPassantTarget = files[to.col] + '3';
+    } else if (piece.name === 'bP' && from.row === 1 && to.row === 3) {
+        // Black pawn moved two squares
+        const files = ['a','b','c','d','e','f','g','h'];
+        enPassantTarget = files[to.col] + '6';
+    } else {
+        enPassantTarget = '-';
+    }
+}
+
+// This function updates halfmove clock and fullmove number
+function updateMoveCounters(from,to,piece) {    
+    if (piece.name[1] === 'P' || moveLog.length > 0 && boardArray[to.row][to.col] !== null) {
+        halfmoveClock = 0;
+    } else {
+        halfmoveClock++;
+    }
+    if (piece.name[0] === 'b') {
+        fullmoveNumber++;
+    }
+}
 // This function calculates en passant target square based on the last move
 function updateEnPassantTarget(from, to, piece) {
     if (piece.name === 'wP' && from.row === 6 && to.row === 4) {

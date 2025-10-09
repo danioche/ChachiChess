@@ -1,6 +1,9 @@
 :root {
     --square-size: 40px;
-    --label-size: 32px;
+    --label-size: 28px;
+    --background-board: rgba(0, 0, 0, 0.63);
+    --background-board-image: url('/static/themes/default/board/board.png');
+    --background-image: url('/static/themes/default/wall/1.jpg');
 }
 .chess-board-container {
     display: grid;
@@ -10,23 +13,25 @@
     margin: 20px auto;
     width: fit-content;
     position: relative;
+    background-image: var(--background-board-image);
+    background-color: var(--background-board)   
 }
 .chess-label {
     display: flex;
     align-items: center;
     justify-content: center;
     font-family: Arial, sans-serif;
-    font-size: 16px;
+    font-size: 12px;
     user-select: none;
-    color: #333;
+    color: #ebebeb;
 }
 .chess-label.top, .chess-label.bottom {
     border: none;
-    background: none;
+    background: transparent;
 }
 .chess-label.left, .chess-label.right {
     border: none;
-    background: none;
+    background: transparent;
 }
 .chess-board {
     display: contents;
@@ -34,6 +39,33 @@
 .chess-square {
     width: var(--square-size);
     height: var(--square-size);
+    cursor: -webkit-grab; cursor: grab;
+}
+
+img.grabbing:active{
+    cursor: url("https://www.google.com/intl/en_ALL/mapfiles/closedhand.cur"), all-scroll !important;
+    cursor: -webkit-grabbing;
+    cursor: -moz-grabbing;
+    cursor: -o-grabbing;
+    cursor: -ms-grabbing;
+    cursor: grabbing !important;
+}
+
+.chess-square.grabbing {
+  cursor: url("https://www.google.com/intl/en_ALL/mapfiles/openhand.cur"), all-scroll;
+  cursor: -webkit-grab;
+  cursor: -moz-grab;
+  cursor: -o-grab;
+  cursor: -ms-grab;
+  cursor: grab;
+}
+.chess-square.grabbing:active {
+    cursor: url("https://www.google.com/intl/en_ALL/mapfiles/closedhand.cur"), all-scroll;
+    cursor: -webkit-grabbing;
+    cursor: -moz-grabbing;
+    cursor: -o-grabbing;
+    cursor: -ms-grabbing;
+    cursor: grabbing;
 }
 .chess-square.white {
     background: #f0d9b5;
@@ -42,7 +74,16 @@
     background: #b58863;
 }
 
+.chess-square.move-dot {
+    background-image: url('/static/themes/default/board/slot.png');
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 50% 50%;
+}
+
 body {
     background: linear-gradient(rgba(255,255,255,0.7), rgba(255,255,255,0.7)), 
-                url('/static/themes/default/wall/1.jpg') center center / cover no-repeat fixed;
+                var(--background-image) center center / cover no-repeat fixed;
+    font-family: "Montserrat", sans-serif !important; 
 }
+

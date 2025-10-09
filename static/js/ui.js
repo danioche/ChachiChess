@@ -61,5 +61,14 @@ document.getElementById('restart-btn').onclick = function() {
     updatePGNTextArea();
 };
 
+// Flip Board button logic - Is kind of resetting the game too
+document.getElementById('flip-board-btn').onclick = function() {
+    isBoardFlipped = !isBoardFlipped;
+    boardArray = fenToBoardArray(initialFEN);
+    moveLog.length = 0;
+    renderChessBoard(64, boardArray);
+    updatePGNTextArea();
+}
+
 // Initial PGN area fill
 updatePGNTextArea();

@@ -32,6 +32,7 @@ let castlingString = 'KQkq';
 let enPassantTarget = '-';
 let halfmoveClock = 0;
 let fullmoveNumber = 1;
+let isBoardFlipped = false;
 
 // Board logic =================================================================
 
@@ -74,6 +75,8 @@ function fenToBoardArray(fen) {
 
 let allowedMovesPendingToConfirm = [];
 
+// CORE: Main function to render the chess board 
+// TODO: Refactor this in initialization funtion and movement / rendering function 
 function renderChessBoard(squareSize = 64, boardArrayParam = null) {
     // Set CSS variables for square and label size
     document.documentElement.style.setProperty('--square-size', squareSize + 'px');
@@ -81,23 +84,45 @@ function renderChessBoard(squareSize = 64, boardArrayParam = null) {
     const container = document.getElementById('chess-board-container');
     container.innerHTML = '';
     const files = ['a','b','c','d','e','f','g','h'];
+
     // Top labels
     container.appendChild(document.createElement('div'));
     for (let i = 0; i < 8; i++) {
         const label = document.createElement('div');
         label.className = 'chess-label top';
-        label.textContent = files[i];
+        if (isBoardFlipped) {
+            label.textContent = files[7 - i];
+        } else{
+            label.textContent = files[i];
+        }
         container.appendChild(label);
     }
     container.appendChild(document.createElement('div'));
+
+    // If the board is flipped, we need to reverse the boardArray for rendering
+    let boardArray = boardArrayParam;
+    // also reverse the rows rendering order if flipped
+    if (isBoardFlipped) {
+        boardArray = boardArrayParam.slice().reverse().map(row => row.slice().reverse());
+        minRow = 7; maxRow = 0;
+    } else {
+        minRow = 0; maxRow = 7;   
+    }    
+
     // Board rows with side labels
     for (let row = 8; row >= 1; row--) {
         const boardRowIdx = 8 - row;
         // Left label
         const leftLabel = document.createElement('div');
         leftLabel.className = 'chess-label left';
-        leftLabel.textContent = row;
+
+        if (isBoardFlipped) {
+            leftLabel.textContent = 9 - row;
+        } else {
+            leftLabel.textContent = row;
+        }
         container.appendChild(leftLabel);
+
         // Squares
         for (let col = 0; col < 8; col++) {
             const square = document.createElement('div');
@@ -111,6 +136,24 @@ function renderChessBoard(squareSize = 64, boardArrayParam = null) {
             });
             square.addEventListener('drop', function(e) {
                 e.preventDefault();
+
+                // if board is flipped, we need to adjust the row and col to match the actual boardArray
+                if (isBoardFlipped){
+                    square.dataset.row = 7 - parseInt(square.dataset.row);
+                    square.dataset.col = 7 - parseInt(square.dataset.col);
+                    console.log("After flip:", square.dataset.row, square.dataset.col);
+                    draggedFrom = { row: 7 - draggedFrom.row, col: 7 - draggedFrom.col};
+                }
+
+                // Check first if the move is allowed
+                if (allowedMovesPendingToConfirm.length > 0) {
+                    const to = { row: parseInt(square.dataset.row), col: parseInt(square.dataset.col) };
+                    const isAllowed = allowedMovesPendingToConfirm.some(m => m.row === to.row && m.col === to.col);
+                    if (!isAllowed) {
+                        // Invalid move, ignore
+                        return;
+                    }   
+                } 
                 const from = draggedFrom;
                 const to = { row: parseInt(square.dataset.row), col: parseInt(square.dataset.col) };
                 if (from && (from.row !== to.row || from.col !== to.col)) {
@@ -142,7 +185,8 @@ function renderChessBoard(squareSize = 64, boardArrayParam = null) {
                 }
             });
 
-            // If boardArray is provided, show piece image if present
+            // CORE for movement !!! Here is the logic to allow moving pieces
+            // First of all: If boardArray is provided, show piece image if present
             if (boardArray && boardArray[boardRowIdx] && boardArray[boardRowIdx][col]) {
                 const piece = boardArray[boardRowIdx][col];
                 const img = document.createElement('img');
@@ -151,16 +195,18 @@ function renderChessBoard(squareSize = 64, boardArrayParam = null) {
                 img.style.width = '100%';
                 img.style.height = '100%';
                 img.draggable = true;
+
+                // Add the drag event to the piece
                 img.addEventListener('dragstart', function(e) {
                     e.dataTransfer.setDragImage(img, img.width / 2, img.height / 2);
                     e.dataTransfer.effectAllowed = 'move';
                     e.dataTransfer.dropEffect = 'move';
                     e.dataTransfer.setData('text/plain', 'Moviendo pieza');
                     draggedFrom = { row: boardRowIdx, col: col };
-                    // We should now calculate and render the allowed moves for this piece
-                    allowedMovesPendingToConfirm = allowedMoves({row:boardRowIdx, col:col}, piece);
                     
-                    renderAllowedMoves(allowedMovesPendingToConfirm);
+                    // TODO: call main move function
+                    movePiece(piece, draggedFrom);
+
                 });
 
                 // Touch support for drag
@@ -187,18 +233,52 @@ function renderChessBoard(squareSize = 64, boardArrayParam = null) {
         // Right label
         const rightLabel = document.createElement('div');
         rightLabel.className = 'chess-label right';
-        rightLabel.textContent = row;
+        if (isBoardFlipped) {
+            rightLabel.textContent = 9 - row;
+        } else {    
+            rightLabel.textContent = row;
+        }
         container.appendChild(rightLabel);
+    }
+
+    // Now we reverse the boardArray back if it was flipped just to keep logic consistent
+    if (isBoardFlipped) {
+        boardArray = boardArrayParam;
     }
     // Bottom labels
     container.appendChild(document.createElement('div'));
     for (let i = 0; i < 8; i++) {
         const label = document.createElement('div');
         label.className = 'chess-label bottom';
-        label.textContent = files[i];
+        if (isBoardFlipped) {
+            label.textContent = files[7 - i];
+        } else{
+            label.textContent = files[i];
+        }
         container.appendChild(label);
     }
     container.appendChild(document.createElement('div'));
+}
+
+// CORE: Main movement function 
+function movePiece(piece, position) {
+
+    // If board is flipped, we need to adjust the row and col to match the actual boardArray
+    if (isBoardFlipped){
+        position = { row: 7 - position.row, col: 7 - position.col};
+        console.log("After flip:", position);
+    }
+    console.log("Piece selected to move:", piece, "at position:", position);
+
+    // We need to know if it's our turn to move
+    if (piece.name[0] == currentTurn()) {
+        // CORE: We should now calculate and render the allowed moves for this piece
+        allowedMovesPendingToConfirm = allowedMoves(position, piece);
+        renderAllowedMoves(allowedMovesPendingToConfirm);
+    }else{
+        console.log("Not your turn to move");
+        clearAllowedMoves();
+    }
 }
 
 // Renders the allowed moves as dots on the board
@@ -207,6 +287,19 @@ function renderAllowedMoves(moves) {
     if (moves.length === 0) return; 
     const container = document.getElementById('chess-board-container');
     moves.forEach(move => {
+        
+        console.log("Allowed move:", move);
+
+        if (isBoardFlipped){
+            // row and col need to be trasposed to match the flipped board
+            move = { row: 7 - move.row, col: 7 - move.col};
+            console.log("After flip:", move);
+        }
+            
+        
+        // If we are in flipped mode, we need to adjust the row and col
+        
+
         const square = container.querySelector(`.chess-square[data-row='${move.row}'][data-col='${move.col}']`);
         if (square) {
             const dot = document.createElement('img');
@@ -227,59 +320,59 @@ function getPawnMoves(from, color) {
 
     // Forward move
     if (boardArray[from.row + dir] && boardArray[from.row + dir][from.col] === null) {
-        moves.push({ row: from.row + dir, col: from.col });
+        moves.push({ row: from.row + dir, col: from.col, capture: false  });
         // Double move from starting position
         if (from.row === startRow && boardArray[from.row + 2 * dir][from.col] === null) {
-            moves.push({ row: from.row + 2 * dir, col: from.col });
+            moves.push({ row: from.row + 2 * dir, col: from.col , capture: false  } );
         }
     }
     // Captures
     for (let dc of [-1, 1]) {
         const r = from.row + dir, c = from.col + dc;
         if (r >= 0 && r < 8 && c >= 0 && c < 8 && boardArray[r][c] && boardArray[r][c].name[0] === enemy) {
-            moves.push({ row: r, col: c });
+            moves.push({ row: r, col: c , capture: true});
         }
     }
     return moves;
 }
 
 // Rook moves generator
-function getRookMoves(from, color) {
+function getRookMoves(from, color) {    
     const moves = [];
     const enemy = color === 'w' ? 'b' : 'w';
     // Up
     for (let r = from.row - 1; r >= 0; r--) {
         if (boardArray[r][from.col] === null) {
-            moves.push({ row: r, col: from.col });
+            moves.push({ row: r, col: from.col, capture: false });
         } else {
-            if (boardArray[r][from.col].name[0] === enemy) moves.push({ row: r, col: from.col });
+            if (boardArray[r][from.col].name[0] === enemy) moves.push({ row: r, col: from.col , capture: true });
             break;
         }
     }
     // Down
     for (let r = from.row + 1; r < 8; r++) {
         if (boardArray[r][from.col] === null) {
-            moves.push({ row: r, col: from.col });
+            moves.push({ row: r, col: from.col, capture: false });
         } else {
-            if (boardArray[r][from.col].name[0] === enemy) moves.push({ row: r, col: from.col });
+            if (boardArray[r][from.col].name[0] === enemy) moves.push({ row: r, col: from.col, capture: true });
             break;
         }
     }
     // Left
     for (let c = from.col - 1; c >= 0; c--) {
         if (boardArray[from.row][c] === null) {
-            moves.push({ row: from.row, col: c });
+            moves.push({ row: from.row, col: c, capture: false });
         } else {
-            if (boardArray[from.row][c].name[0] === enemy) moves.push({ row: from.row, col: c });
+            if (boardArray[from.row][c].name[0] === enemy) moves.push({ row: from.row, col: c, capture: true });
             break;
         }
     }
     // Right
     for (let c = from.col + 1; c < 8; c++) {
         if (boardArray[from.row][c] === null) {
-            moves.push({ row: from.row, col: c });
+            moves.push({ row: from.row, col: c, capture: false });
         } else {
-            if (boardArray[from.row][c].name[0] === enemy) moves.push({ row: from.row, col: c });
+            if (boardArray[from.row][c].name[0] === enemy) moves.push({ row: from.row, col: c, capture: true });
             break;
         }
     }
@@ -296,9 +389,9 @@ function getBishopMoves(from, color) {
             let r = from.row + dr, c = from.col + dc;
             while (r >= 0 && r < 8 && c >= 0 && c < 8) {
                 if (boardArray[r][c] === null) {
-                    moves.push({ row: r, col: c });
+                    moves.push({ row: r, col: c, capture: false });
                 } else {
-                    if (boardArray[r][c].name[0] === enemy) moves.push({ row: r, col: c });
+                    if (boardArray[r][c].name[0] === enemy) moves.push({ row: r, col: c, capture: true });
                     break;
                 }
                 r += dr;
@@ -330,7 +423,7 @@ function getKnightMoves(from, color) {
         const r = from.row + dr, c = from.col + dc;
         if (r >= 0 && r < 8 && c >= 0 && c < 8) {
             if (boardArray[r][c] === null || boardArray[r][c].name[0] === enemy) {
-                moves.push({ row: r, col: c });
+                moves.push({ row: r, col: c, capture: boardArray[r][c] !== null  } );
             }
         }
     }
@@ -347,7 +440,7 @@ function getKingMoves(from, color) {
             const r = from.row + dr, c = from.col + dc;
             if (r >= 0 && r < 8 && c >= 0 && c < 8) {
                 if (boardArray[r][c] === null || boardArray[r][c].name[0] === enemy) {
-                    moves.push({ row: r, col: c });
+                    moves.push({ row: r, col: c, capture: boardArray[r][c] !== null  } );
                 }
             }
         }
@@ -524,6 +617,12 @@ function updateMoveCounters(from,to,piece) {
         fullmoveNumber++;
     }
 }
+
+// This function checks who is moving returning 'w' or 'b'
+function currentTurn() {
+    return moveLog.length % 2 === 0 ? 'w' : 'b';
+}
+
 // This function calculates en passant target square based on the last move
 function updateEnPassantTarget(from, to, piece) {
     if (piece.name === 'wP' && from.row === 6 && to.row === 4) {

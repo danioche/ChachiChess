@@ -1,0 +1,48 @@
+:root {
+    --square-size: 40px;
+    --label-size: 32px;
+}
+.chess-board-container {
+    display: grid;
+    grid-template-columns: var(--label-size) repeat(8, var(--square-size)) var(--label-size);
+    grid-template-rows: var(--label-size) repeat(8, var(--square-size)) var(--label-size);
+    justify-content: center;
+    margin: 20px auto;
+    width: fit-content;
+    position: relative;
+}
+.chess-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: Arial, sans-serif;
+    font-size: 16px;
+    user-select: none;
+    color: #333;
+}
+.chess-label.top, .chess-label.bottom {
+    border: none;
+    background: none;
+}
+.chess-label.left, .chess-label.right {
+    border: none;
+    background: none;
+}
+.chess-board {
+    display: contents;
+}
+.chess-square {
+    width: var(--square-size);
+    height: var(--square-size);
+}
+.chess-square.white {
+    background: #f0d9b5;
+}
+.chess-square.black {
+    background: #b58863;
+}
+
+body {
+    background: linear-gradient(rgba(255,255,255,0.7), rgba(255,255,255,0.7)), 
+                url('/static/themes/default/wall/1.jpg') center center / cover no-repeat fixed;
+}

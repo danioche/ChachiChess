@@ -1,0 +1,115 @@
+#side-menu {
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100vh;
+    width: 280px;
+    background: #f7f7f7;
+    border-right: 1px solid #ccc;
+    box-shadow: 2px 0 8px rgba(0,0,0,0.07);
+    transform: translateX(-250px);
+    transition: transform 0.3s;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+}
+#side-menu.open {
+    transform: translateX(0);
+}
+#side-menu-toggle {
+    position: fixed;
+    left: 10px;
+    top: 10px;
+    z-index: 1100;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+#side-menu-header {
+    font-size: 1.3em;
+    font-weight: bold;
+    padding: 18px 20px 10px 20px;
+    border-bottom: 1px solid #e0e0e0;
+    background: #ececec;
+}
+#side-menu-content {
+    flex: 1;
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+#side-menu label {
+    font-size: 0.97em;
+    margin-bottom: 3px;
+    color: #444;
+}
+#side-menu input[type="text"] {
+    width: 100%;
+    padding: 6px 8px;
+    margin-bottom: 8px;
+    border: 1px solid #bbb;
+    border-radius: 3px;
+    font-size: 1em;
+}
+#side-menu textarea {
+    width: 100%;
+    min-height: 110px;
+    resize: vertical;
+    font-family: monospace;
+    font-size: 0.97em;
+    border: 1px solid #bbb;
+    border-radius: 3px;
+    padding: 7px;
+    background: #fafafa;
+}
+#restart-btn {
+    margin-top: 10px;
+    padding: 8px 0;
+    width: 100%;
+    background: #e74c3c;
+    color: #fff;
+    border: none;
+    border-radius: 3px;
+    font-size: 1em;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.2s;
+}
+#restart-btn:hover {
+    background: #c0392b;
+}
+
+#fen-btn {
+    margin-top: 10px;
+    padding: 8px 0;
+    width: 100%;
+    background: #e7e43c;
+    color: #fff;
+    border: none;
+    border-radius: 3px;
+    font-size: 1em;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.2s;
+}
+#fen-btn:hover {
+    background: #f3ef14;
+}
+@media (max-width: 600px) {
+    #side-menu {
+        width: 90vw;
+        min-width: 0;
+        max-width: 98vw;
+        transform: translateX(-85vw);
+    }
+    #side-menu.open {
+        transform: translateX(0);
+    }
+}

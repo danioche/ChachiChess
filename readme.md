@@ -27,6 +27,7 @@ ChachiChess is a simple, interactive chessboard web application. It displays a c
 
 - `chachi.html` - Main HTML file with all logic and styles
 - `static/themes/default/pieces/` - Folder for chess piece images
+- 
 
 ## Credits
 
@@ -36,3 +37,19 @@ ChachiChess is a simple, interactive chessboard web application. It displays a c
 ## License
 
 [Specify your license here, e.g., MIT]
+
+
+# TODOs, ideas and much more
+
+Currently working on:
+
+- Castling movements
+- Capture movements
+- Checking
+- Initial version of chat and play against bot
+
+List of things that I will love to add:
+
+- Multi-language support
+- Conversations during the game with teachers and avatars
+- Interactivity online and offline

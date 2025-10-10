@@ -134,6 +134,8 @@ function renderChessBoard(squareSize = 64, boardArrayParam = null) {
             square.addEventListener('dragover', function(e) {
                 e.preventDefault();
             });
+
+            // CORE - Drop event
             square.addEventListener('drop', function(e) {
                 e.preventDefault();
 
@@ -160,6 +162,38 @@ function renderChessBoard(squareSize = 64, boardArrayParam = null) {
                     // Move piece in boardArray
                     boardArray[to.row][to.col] = boardArray[from.row][from.col];
                     boardArray[from.row][from.col] = null;
+                    
+                    // if is a castling move, move the rook too - It's a Kinkg doing a move
+                    if (boardArray[to.row][to.col] && boardArray[to.row][to.col].name[1] === 'K') {
+                        // Kinkg can castle, no matter if white or black
+                        const castlingMove = allowedMovesPendingToConfirm.find(m => m.row === to.row && m.col === to.col && m.castling);
+                        if (castlingMove) {
+                            // Now have to check if is white or black
+                            if(boardArray[to.row][to.col].name[0] === 'w'){
+                                if (castlingMove.castling === 'K') {
+                                    // Kingside
+                                    boardArray[to.row][to.col - 1] = boardArray[to.row][7];
+                                    boardArray[to.row][7] = null;
+                                } else if (castlingMove.castling === 'Q') {
+                                    // Queenside
+                                    boardArray[to.row][to.col + 1] = boardArray[to.row][0];
+                                    boardArray[to.row][0] = null;
+                                }
+                            } else { // black
+                                if (castlingMove.castling === 'K') {
+                                    // Kingside
+                                    boardArray[to.row][to.col - 1] = boardArray[to.row][7];
+                                    boardArray[to.row][7] = null;
+                                } else if (castlingMove.castling === 'Q') {
+                                    // Queenside
+                                    boardArray[to.row][to.col + 1] = boardArray[to.row][0];
+                                    boardArray[to.row][0] = null;
+                                }
+                            }
+                        }
+                    }
+
+
                     draggedFrom = null;
                     renderChessBoard(squareSize, boardArray);
                     // Log the move
@@ -295,10 +329,6 @@ function renderAllowedMoves(moves) {
             move = { row: 7 - move.row, col: 7 - move.col};
             console.log("After flip:", move);
         }
-            
-        
-        // If we are in flipped mode, we need to adjust the row and col
-        
 
         const square = container.querySelector(`.chess-square[data-row='${move.row}'][data-col='${move.col}']`);
         if (square) {
@@ -306,6 +336,7 @@ function renderAllowedMoves(moves) {
             dot.src = '/static/themes/default/pieces/slot.png';
             dot.alt = "Allowed Move!"
             dot.className = 'move-dot';
+            dot.id = `move-dot-${move.row}-${move.col}-${move.capture ? 'capture' : 'normal'}-${move.castling ? move.castling : ''}`;
             square.appendChild(dot);
         }
     });
@@ -445,7 +476,25 @@ function getKingMoves(from, color) {
             }
         }
     }
-    // Castling not implemented here
+    // Check for castling is available
+    if (color === 'w' && from.row === 7 && from.col === 4) {
+        if (castlingRights.wK && boardArray[7][5] === null && boardArray[7][6] === null) {
+            moves.push({ row: 7, col: 6, castling: 'K' });
+        }
+        if (castlingRights.wQ && boardArray[7][3] === null && boardArray[7][2] === null && boardArray[7][1] === null) {
+            moves.push({ row: 7, col: 2, castling: 'Q' });
+        }
+    } else if (color === 'b' && from.row === 0 && from.col === 4) {
+        if (castlingRights.bK && boardArray[0][5] === null && boardArray[0][6] === null) {
+            moves.push({ row: 0, col: 6, castling: 'K' });
+        }
+        if (castlingRights.bQ && boardArray[0][3] === null && boardArray[0][2] === null && boardArray[0][1] === null) {
+            moves.push({ row: 0, col: 2, castling: 'Q' });
+        }
+    }
+
+    console.log("King moves:", moves);
+    
     return moves;
 }
 

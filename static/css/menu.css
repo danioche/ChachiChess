@@ -103,6 +103,24 @@
 #fen-btn:hover {
     background: #f3ef14;
 }
+
+#flip-board-btn {
+    margin-top: 10px;
+    padding: 8px 0;
+    width: 100%;
+    background: #3498db;
+    color: #fff;
+    border: none;
+    border-radius: 3px;
+    font-size: 1em;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.2s;
+}
+#flip-board-btn:hover {
+    background: #2980b9;
+}
+
 @media (max-width: 600px) {
     #side-menu {
         width: 90vw;

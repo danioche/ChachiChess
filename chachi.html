@@ -28,11 +28,127 @@
             <label for="pgn-area">PGN Notation:</label>
             <textarea id="pgn-area" readonly></textarea>
         </div>
-        <button id="fen-btn">Get FEN</button>
-        <button id="restart-btn">Restart Game</button>
-        <button id="flip-board-btn">Flip Board</button>
+        <button id="fen-btn">💾 Get FEN</button>
+        <button id="restart-btn">⟳ Restart Game</button>
+        <button id="flip-board-btn">↳↰ Flip Board</button>
     </div>
 </div>
+<button id="right-menu-toggle" title="Right Menu" style="position:fixed; top:20px; right:20px; z-index:1100;">&#9776;</button>
+<div id="right-side-menu" style="position:fixed; top:0; right:-320px; width:300px; height:100vh; background:#f7f7fa; box-shadow:-2px 0 12px rgba(0,0,0,0.08); z-index:1099; transition:right 0.3s; display:flex; flex-direction:column;">
+    <div style="padding:18px 18px 10px 18px; font-weight:600; font-size:1.2em; border-bottom:1px solid #e0e0e0;">
+        ChachiChess Club 💬 
+        <button id="right-menu-close" style="float:right; background:none; border:none; font-size:1.3em; color:#888; cursor:pointer;">&times;</button>
+    </div>
+    <div style="padding:18px; flex:1; overflow-y:auto;">
+        <!-- Add your right menu content here -->
+        <p>Here you can chat with the lovely people of the ChachiChess Club</p>
+    
+        <!-- Connected users -->
+         <style>
+            #connected-users ul {
+                padding-left: 0;
+            }
+            #connected-users ul li {
+                margin-bottom: 6px;
+                display:inline-block;
+                margin-right:12px;
+                vertical-align:middle;
+            }
+            #connected-users ul li img {
+                vertical-align:middle;
+                border-radius:50%;
+                margin-right:6px;
+            }
+            #connected-users ul li button {
+                background:none;
+                border:none;
+                font-size:1em;
+                color:#4a90e2;
+                cursor:default;
+            }
+            #connected-users ul li button#chat-with-teacher-btn {
+                background:#4a90e2;
+                color:#fff;
+                border:none;
+                padding:2px 8px;
+                font-size:0.85em;
+                border-radius:4px;
+                cursor:pointer;
+            }
+        </style>
+        <div id="connected-users" style="margin-bottom:18px;">
+            <strong>Connected Users:</strong>
+            <ul id="user-list" style="list-style:none; padding-left:0; margin-top:6px;">
+                <li>
+                    <img src="/static/themes/default/teachers/daniocheChessTeacher_avatar2.png" alt="User Avatar" style="vertical-align:middle; border-radius:50%; margin-right:6px;" width="48px">
+                    <div style="display:block; float:right; width:78%">
+                        ChachiChess teacher<button title="ChachiChess Teacher is the main teacher of the ChachiChess Club" style="background:none; border:none; font-size:1em; color:#4a90e2; cursor:default;">&#9432;</button>
+                        <button id="chat-with-teacher-btn" >Chat</button>
+                    </div>
+                </li>
+                <li>
+                    <img src="/static/themes/default/teachers/teacher2.png" alt="User Avatar" style="vertical-align:middle; border-radius:50%; margin-right:6px;" width="48px">
+                    <span>Paco Teacher</span>
+                </li>
+                <li>
+                    <img src="/static/themes/default/teachers/teacher3.png" alt="User Avatar" style="vertical-align:middle; border-radius:50%; margin-right:6px;" width="48px">
+                    <span>Sara Teacher</span>
+                </li>
+            </ul>
+        </div>
+        <!-- Chat Box Dialog -->
+        <div id="chat-box" style="display:flex; flex-direction:column; height:320px; border:1px solid #e0e0e0; border-radius:6px; margin-bottom:18px; background:#fff;">
+            <div id="chat-messages" style="flex:1; padding:10px; overflow-y:auto; font-size:0.98em;"></div>
+            <form id="chat-form" style="display:flex; border-top:1px solid #e0e0e0;">
+                <input type="text" id="chat-input" placeholder="Type a message..." autocomplete="off" style="flex:1; border:none; padding:10px; font-size:1em; outline:none;">
+                <button type="submit" style="background:#4a90e2; color:#fff; border:none; padding:0 18px; font-size:1em; cursor:pointer;">Send</button>
+            </form>
+        </div>
+        <script>
+        const chatMessages = document.getElementById('chat-messages');
+        const chatForm = document.getElementById('chat-form');
+        const chatInput = document.getElementById('chat-input');
+
+        chatForm.onsubmit = function(e) {
+            e.preventDefault();
+            const msg = chatInput.value.trim();
+            if (msg) {
+                const div = document.createElement('div');
+                div.textContent = msg;
+                div.style.margin = '6px 0';
+                div.style.padding = '6px 10px';
+                div.style.background = '#f1f3fa';
+                div.style.borderRadius = '5px';
+                chatMessages.appendChild(div);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                chatInput.value = '';
+            }
+        };
+        </script>
+    </div>
+
+</div>
+<script>
+const rightMenu = document.getElementById('right-side-menu');
+const rightMenuToggle = document.getElementById('right-menu-toggle');
+const rightMenuClose = document.getElementById('right-menu-close');
+
+rightMenuToggle.onclick = () => {
+    rightMenu.style.right = '0';
+};
+rightMenuClose.onclick = () => {
+    rightMenu.style.right = '-320px';
+};
+// Optional: Hide toggle button when menu is open
+rightMenu.addEventListener('transitionend', () => {
+    if (rightMenu.style.right === '0px') {
+        rightMenuToggle.style.display = 'none';
+    } else {
+        rightMenuToggle.style.display = '';
+    }
+});
+rightMenuToggle.style.display = '';
+</script>
 <!-- Modal Dialog Container -->
 <div id="modal-dialog" style="display:none; position:fixed; z-index:2000; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.45); align-items:center; justify-content:center;">
     <div style="background:#fff; border-radius:8px; box-shadow:0 4px 32px rgba(0,0,0,0.18); min-width:300px; max-width:90vw; padding:28px 22px 18px 22px; position:relative; display:flex; flex-direction:column; align-items:center;">

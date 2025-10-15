@@ -27,6 +27,7 @@ This file is just for sharing with you the links used during development as insp
 - https://python-chess.readthedocs.io/en/v1.11.2/core.html
 - https://github.com/Zerbinati/Stockfish/releases/tag/250425 
 - https://stockfishchess.org/download/
+- https://kokopu.yo35.org/docs/4.12.1/
 
 
 ## Openings files

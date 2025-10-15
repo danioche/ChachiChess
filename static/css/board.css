@@ -74,6 +74,10 @@ img.grabbing:active{
     background: #b58863;
 }
 
+.chess-square.capture{
+    background-color: #d85b5ba2;
+}
+
 .chess-square.move-dot {
     background-image: url('/static/themes/default/board/slot.png');
     background-repeat: no-repeat;

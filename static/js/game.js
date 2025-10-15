@@ -23,21 +23,55 @@ const fenToPieceName = {
     'k': 'bK', 'q': 'bQ', 'r': 'bR', 'b': 'bB', 'n': 'bN', 'p': 'bP'
 };
 
+// Different testing positions in FEN for debugging
+const startBoard = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+const nowsBlackTrun = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1";
+const onemovetocastle = "rnbqk2r/pppp1ppp/5n2/2b1p3/2B1PP2/5N2/PPPP2PP/RNBQK2R b - - 0 8";
+const promotionPawns = "rnbqk2r/pppp1P1p/7N/8/2B4b/8/PPP3pP/RNBQK2R b - - 0 19";
+const enPassant = "rnbqkbnr/ppp2ppp/4p3/3pP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 3";
+const enPassantB = "rnbqkbnr/ppp1pppp/8/8/3pP3/3P4/PPP2PPP/RNBQKBNR w KQkq - 0 3";
+
 // Initial position in FEN
-const initialFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+const initialFEN = nowsBlackTrun;
+
+//
+// Note: FEN position is ALL for initial status of the board. The board should be set with fenToBoardArray
+//
 let boardArray = fenToBoardArray(initialFEN);
 let draggedFrom = null;
 let castlingRights = { wK: true, wQ: true, bK: true, bQ: true };
-let castlingString = 'KQkq';
-let enPassantTarget = '-';
-let halfmoveClock = 0;
-let fullmoveNumber = 1;
+let castlingString = initialFEN.split(" ")[2];
+let enPassantTarget = initialFEN.split(" ")[3];
+let halfmoveClock = initialFEN.split(" ")[4];
+let fullmoveNumber = parseInt( initialFEN.split(" ")[5] );
+let whosMoving = initialFEN.split(" ")[1] === 'w' ? 0:1; // 0 Whites
 let isBoardFlipped = false;
+let allowedMovesPendingToConfirm = [];
+
+// Player - This array will store every setp on the board so we can go backguards on the current play
+let player = [];
+let playerTimer = 0;
 
 // Board logic =================================================================
 
 // 1) - CORE functions
 // -----------------------------------------------------------------------------    
+
+function resetGame(){
+    boardArray = fenToBoardArray(initialFEN);
+    draggedFrom = null;
+    castlingRights = { wK: true, wQ: true, bK: true, bQ: true };
+    castlingString = initialFEN.split(" ")[2];
+    enPassantTarget = initialFEN.split(" ")[3];
+    halfmoveClock = initialFEN.split(" ")[4];
+    fullmoveNumber = initialFEN.split(" ")[5];
+    whosMoving = initialFEN.split(" ")[1] === 'w' ? 0:1; // 0 Whites
+    isBoardFlipped = false;
+    moveLog.length = 0;
+    renderChessBoard(64, boardArray);
+    updatePGNTextArea();
+}
+
 function fenToBoardArray(fen) {
     // Only use the first field (piece placement)
     const rows = fen.split(' ')[0].split('/');
@@ -72,8 +106,6 @@ function fenToBoardArray(fen) {
     }
     return board;
 }
-
-let allowedMovesPendingToConfirm = [];
 
 // CORE: Main function to render the chess board 
 // TODO: Refactor this in initialization funtion and movement / rendering function 
@@ -135,9 +167,12 @@ function renderChessBoard(squareSize = 64, boardArrayParam = null) {
                 e.preventDefault();
             });
 
-            // CORE - Drop event
+            // CORE - Drop event -- Finalization of the move
+            // TODO: Create auxiliar function to make this more readable
             square.addEventListener('drop', function(e) {
                 e.preventDefault();
+
+                if (allowedMovesPendingToConfirm.length==0) return;
 
                 // if board is flipped, we need to adjust the row and col to match the actual boardArray
                 if (isBoardFlipped){
@@ -153,20 +188,41 @@ function renderChessBoard(squareSize = 64, boardArrayParam = null) {
                     const isAllowed = allowedMovesPendingToConfirm.some(m => m.row === to.row && m.col === to.col);
                     if (!isAllowed) {
                         // Invalid move, ignore
+                        clearAllowedMoves();
                         return;
                     }   
                 } 
                 const from = draggedFrom;
                 const to = { row: parseInt(square.dataset.row), col: parseInt(square.dataset.col) };
                 if (from && (from.row !== to.row || from.col !== to.col)) {
+
+                    // Check Pawns to promote
+                    if(
+                        (boardArray[from.row][from.col].name[1]==='P' && boardArray[from.row][from.col].name[0] ==='w' && to.row === 0 ) || 
+                        (boardArray[from.row][from.col].name[1]==='P' && boardArray[from.row][from.col].name[0] ==='b' && to.row === 7 )
+                    )  
+                    {
+                        showPromotionModal(e, 
+                                          /* Piece generation on the fly */ 
+                                          { name: boardArray[from.row][from.col].name, row: to.row, col: to.col });
+                    }
+                    
                     // Move piece in boardArray
                     boardArray[to.row][to.col] = boardArray[from.row][from.col];
                     boardArray[from.row][from.col] = null;
                     
-                    // if is a castling move, move the rook too - It's a Kinkg doing a move
+                    // If it's an en-passant move we should remove the pawn captured from the board
+                    if( allowedMovesPendingToConfirm.find(m => m.row === to.row && m.col === to.col && m.enpassant) ){
+                        // Depending on direction (white or black) we will remove one or other square
+                        if(boardArray[to.row][to.col].name[0] === 'w') boardArray[to.row+1][to.col] = null;
+                        else boardArray[to.row-1][to.col] = null;
+                    }
+
+                    // If is a castling move, move the rook too - It's a Kinkg doing a move
+                    let castlingMove = null;
                     if (boardArray[to.row][to.col] && boardArray[to.row][to.col].name[1] === 'K') {
                         // Kinkg can castle, no matter if white or black
-                        const castlingMove = allowedMovesPendingToConfirm.find(m => m.row === to.row && m.col === to.col && m.castling);
+                        castlingMove = allowedMovesPendingToConfirm.find(m => m.row === to.row && m.col === to.col && m.castling);
                         if (castlingMove) {
                             // Now have to check if is white or black
                             if(boardArray[to.row][to.col].name[0] === 'w'){
@@ -190,9 +246,9 @@ function renderChessBoard(squareSize = 64, boardArrayParam = null) {
                                     boardArray[to.row][0] = null;
                                 }
                             }
+                            boardArray[to.row][to.col].castling = castlingMove.castling; // King has moved log the castling type
                         }
                     }
-
 
                     draggedFrom = null;
                     renderChessBoard(squareSize, boardArray);
@@ -200,6 +256,8 @@ function renderChessBoard(squareSize = 64, boardArrayParam = null) {
                     if (boardArray[to.row][to.col]) {
                         logMove(from, to, boardArray[to.row][to.col]); 
                     }
+                    // No pending moves, reset.
+                    allowedMovesPendingToConfirm = [];
                 }
             });
 
@@ -297,22 +355,19 @@ function renderChessBoard(squareSize = 64, boardArrayParam = null) {
 // CORE: Main movement function 
 function movePiece(piece, position) {
 
+    if(piece.name[0] != currentTurn()){
+        console.log("Not your turn to move");
+        return;
+    } 
+
     // If board is flipped, we need to adjust the row and col to match the actual boardArray
     if (isBoardFlipped){
         position = { row: 7 - position.row, col: 7 - position.col};
-        console.log("After flip:", position);
     }
-    console.log("Piece selected to move:", piece, "at position:", position);
 
-    // We need to know if it's our turn to move
-    if (piece.name[0] == currentTurn()) {
-        // CORE: We should now calculate and render the allowed moves for this piece
-        allowedMovesPendingToConfirm = allowedMoves(position, piece);
-        renderAllowedMoves(allowedMovesPendingToConfirm);
-    }else{
-        console.log("Not your turn to move");
-        clearAllowedMoves();
-    }
+    // CORE: We should now calculate and render the allowed moves for this piece
+    allowedMovesPendingToConfirm = allowedMoves(position, piece);
+    renderAllowedMoves(allowedMovesPendingToConfirm);
 }
 
 // Renders the allowed moves as dots on the board
@@ -338,8 +393,36 @@ function renderAllowedMoves(moves) {
             dot.className = 'move-dot';
             dot.id = `move-dot-${move.row}-${move.col}-${move.capture ? 'capture' : 'normal'}-${move.castling ? move.castling : ''}`;
             square.appendChild(dot);
+
+            // Capture? 
+            console.log( "Available move: " + move.row + ", " + move.col +" capture: "+ move.capture + " enpassant: " + move.enpassant);
+            if ( move.capture===true || move.enpassant===true ) {
+                square.className += " capture";
+            }
         }
+
+
     });
+}
+
+// This is called when user finally selected the piece to promote
+// Params: Piece Obj { name: "wP", row: int, col: int } , choose = ['q','r','b','n']
+function promotionFinalle(piece,choose){
+
+    console.log("Piece:" + piece + " Choose:"+ choose);
+    let promotedName = piece.name[0] + choose;
+    // TODO: hardcoded path is not good, change!
+    boardArray[ piece.row ][ piece.col ] = { name: promotedName, src: './static/themes/default/pieces/'+ promotedName+'.png' }
+
+    // TODO: hardcoded 64 is not good, remove!
+    renderChessBoard( 64, boardArray);
+
+    // Now we should log the correct movement we should modify the Log
+    moveLog[ moveLog.length - 1 ] = moveLog[ moveLog.length-1 ] + "=" + choose;
+
+    // And... update the PGN window
+    showPGN();
+    
 }
 
 // Pawn moves generator
@@ -348,7 +431,8 @@ function getPawnMoves(from, color) {
     const dir = color === 'w' ? -1 : 1;
     const startRow = color === 'w' ? 6 : 1;
     const enemy = color === 'w' ? 'b' : 'w';
-
+    const files = ['a','b','c','d','e','f','g','h'];
+    
     // Forward move
     if (boardArray[from.row + dir] && boardArray[from.row + dir][from.col] === null) {
         moves.push({ row: from.row + dir, col: from.col, capture: false  });
@@ -363,6 +447,19 @@ function getPawnMoves(from, color) {
         if (r >= 0 && r < 8 && c >= 0 && c < 8 && boardArray[r][c] && boardArray[r][c].name[0] === enemy) {
             moves.push({ row: r, col: c , capture: true});
         }
+        
+        // Checks en-passant targets available 
+        // TODO: Refactor this! - Movement added will depend on the direction of the piece different for black and white
+        if( color === "w" ){
+            if ( files[8-c]+(8-r) == enPassantTarget ) {
+                moves.push({ row: r, col: 8-c , capture: true, enpassant: true});
+            }
+        }else{
+            if ( files[c]+(8-r) == enPassantTarget ) {
+                moves.push({ row: r, col: c , capture: true, enpassant:true });
+            }
+        }
+        
     }
     return moves;
 }
@@ -530,6 +627,7 @@ function allowedMoves(from, piece) {
             return getRookMoves(from, color);
         default: break;
     }
+
     return moves;
 }
 
@@ -544,6 +642,7 @@ function clearAllowedMoves(){
 // 2) - Auxiliary functions 
 // -----------------------------------------------------------------------------
 
+
 // Helper to set board square size and re-render
 function setChessBoardSize(size) {
     renderChessBoard(size, boardArray);
@@ -556,7 +655,12 @@ function logMove(from, to, piece) {
     const fromSquare = files[from.col] + ranks[7 - from.row];
     const toSquare = files[to.col] + ranks[7 - to.row];
     const pieceNotation = piece.name[1]; // 'K', 'Q', 'R', 'B', 'N', 'P'
-    const moveNotation = (pieceNotation === 'P' ? '' : pieceNotation) + fromSquare + toSquare;
+    let moveNotation = (pieceNotation === 'P' ? '' : pieceNotation + fromSquare ) + toSquare;
+    // Pawn capturing notation (same for en-passant)
+    if (piece.name[1]==='P' && from.col != to.col ){ moveNotation = fromSquare[0] + 'x' + toSquare; };
+    // Castling notation
+    if (piece.name[1] === 'K' && piece.castling ) { moveNotation = piece.castling === 'K' ? 'O-O' : 'O-O-O'; }
+    
     moveLog.push(moveNotation);
     console.log("Move logged:", moveNotation);
 }
@@ -665,36 +769,12 @@ function updateMoveCounters(from,to,piece) {
     if (piece.name[0] === 'b') {
         fullmoveNumber++;
     }
+    whosMoving+=1;
 }
 
 // This function checks who is moving returning 'w' or 'b'
 function currentTurn() {
-    return moveLog.length % 2 === 0 ? 'w' : 'b';
+    
+    return  whosMoving%2===0  ? 'w': 'b';
 }
 
-// This function calculates en passant target square based on the last move
-function updateEnPassantTarget(from, to, piece) {
-    if (piece.name === 'wP' && from.row === 6 && to.row === 4) {
-        // White pawn moved two squares
-        const files = ['a','b','c','d','e','f','g','h'];
-        enPassantTarget = files[to.col] + '3';
-    } else if (piece.name === 'bP' && from.row === 1 && to.row === 3) {
-        // Black pawn moved two squares
-        const files = ['a','b','c','d','e','f','g','h'];
-        enPassantTarget = files[to.col] + '6';
-    } else {
-        enPassantTarget = '-';
-    }
-}
-
-// This function updates halfmove clock and fullmove number
-function updateMoveCounters(from,to,piece) {    
-    if (piece.name[1] === 'P' || moveLog.length > 0 && boardArray[to.row][to.col] !== null) {
-        halfmoveClock = 0;
-    } else {
-        halfmoveClock++;
-    }
-    if (piece.name[0] === 'b') {
-        fullmoveNumber++;
-    }
-}

@@ -55,10 +55,7 @@ document.getElementById('player2-name').addEventListener('input', updatePGNTextA
 
 // Restart button logic
 document.getElementById('restart-btn').onclick = function() {
-    boardArray = fenToBoardArray(initialFEN);
-    moveLog.length = 0;
-    renderChessBoard(64, boardArray);
-    updatePGNTextArea();
+    resetGame();
 };
 
 // Flip Board button logic - Is kind of resetting the game too

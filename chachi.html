@@ -11,7 +11,6 @@
     <link rel="stylesheet" href="static/css/menu.css">
 </head>
 <body>
-<div class="chess-board-container" id="chess-board-container"></div>
 <button id="side-menu-toggle" title="Menu">&#9776;</button>
 <div id="side-menu">
     <div id="side-menu-header">ChachiChess &#9822;&#9823;</div>
@@ -31,7 +30,13 @@
         <button id="fen-btn">💾 Get FEN</button>
         <button id="restart-btn">⟳ Restart Game</button>
         <button id="flip-board-btn">↳↰ Flip Board</button>
+        <button id="time-machine-btn"><img src="static/img/timeMachine.png">Time Machine</button>
     </div>
+</div>
+<div class="chess-board-container" id="chess-board-container"></div>
+<div class="chess-board-timeMachine" id="chess-board-timeMachine" style="display:none;">
+    <button id="bwd" title="Back" onclick="timeMachineDo(-1)" disabled>&lArr;</button>
+    <button id="fwd" title="Forward" onclick="timeMachineDo(1)" disabled>&rArr;</button>
 </div>
 <button id="right-menu-toggle" title="Right Menu" style="position:fixed; top:20px; right:20px; z-index:1100;">&#9776;</button>
 <div id="right-side-menu" style="position:fixed; top:0; right:-320px; width:300px; height:100vh; background:#f7f7fa; box-shadow:-2px 0 12px rgba(0,0,0,0.08); z-index:1099; transition:right 0.3s; display:flex; flex-direction:column;">
@@ -126,13 +131,11 @@
         };
         </script>
     </div>
-
 </div>
 <script>
 const rightMenu = document.getElementById('right-side-menu');
 const rightMenuToggle = document.getElementById('right-menu-toggle');
 const rightMenuClose = document.getElementById('right-menu-close');
-
 rightMenuToggle.onclick = () => {
     rightMenu.style.right = '0';
 };

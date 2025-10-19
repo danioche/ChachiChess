@@ -121,6 +121,35 @@
     background: #2980b9;
 }
 
+#time-machine-btn {
+    margin-top: 10px;
+    padding: 10px;
+    padding-bottom: 5px;
+    width: 100%;
+    background: #dd47e2;
+    color: #ffffff;
+    border: none;
+    border-radius: 3px;
+    font-size: 1em;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.2s;
+    text-align: center;
+    display: flex;
+}
+
+#time-machine-btn img{
+    margin-top: -5px;
+    display: flex;
+    margin-left: 10%;
+    margin-right: 8px;
+}
+
+#time-machine-btn:hover{
+    background: #d884db;
+}
+
+
 @media (max-width: 600px) {
     #side-menu {
         width: 90vw;

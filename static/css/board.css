@@ -85,6 +85,20 @@ img.grabbing:active{
     background-size: 50% 50%;
 }
 
+
+.chess-board-timeMachine{
+    justify-content: center;
+    margin: 20px auto;
+    width: fit-content;
+    position: relative;
+}
+
+.chess-board-timeMachine button{
+    font-size: 1.5em;
+    vertical-align: middle;
+    padding-bottom: 8px;
+}
+
 body {
     background: linear-gradient(rgba(255,255,255,0.7), rgba(255,255,255,0.7)), 
                 var(--background-image) center center / cover no-repeat fixed;

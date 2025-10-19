@@ -67,5 +67,19 @@ document.getElementById('flip-board-btn').onclick = function() {
     updatePGNTextArea();
 }
 
+// TimeMachine button logic
+document.getElementById('time-machine-btn').onclick = function(){
+    // Display or not
+    var timeMachineVisible = document.getElementById('chess-board-timeMachine').style.display;
+    document.getElementById('chess-board-timeMachine').style.display = ( timeMachineVisible == "none" ) ? "block":"none";
+}
+
+document.addEventListener("keydown", function (e) {
+    switch (e.key){
+        case "ArrowLeft": if ( document.getElementById('chess-board-timeMachine').style.display=="block" ) timeMachineDo(-1); break;
+        case "ArrowRight": if ( document.getElementById('chess-board-timeMachine').style.display=="block" ) timeMachineDo(1); break;
+    }
+})
+
 // Initial PGN area fill
 updatePGNTextArea();

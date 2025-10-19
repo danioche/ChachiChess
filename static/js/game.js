@@ -38,6 +38,7 @@ const initialFEN = nowsBlackTrun;
 // Note: FEN position is ALL for initial status of the board. The board should be set with fenToBoardArray
 //
 let boardArray = fenToBoardArray(initialFEN);
+let boardSize = 64;
 let draggedFrom = null;
 let castlingRights = { wK: true, wQ: true, bK: true, bQ: true };
 let castlingString = initialFEN.split(" ")[2];
@@ -47,10 +48,7 @@ let fullmoveNumber = parseInt( initialFEN.split(" ")[5] );
 let whosMoving = initialFEN.split(" ")[1] === 'w' ? 0:1; // 0 Whites
 let isBoardFlipped = false;
 let allowedMovesPendingToConfirm = [];
-
-// Player - This array will store every setp on the board so we can go backguards on the current play
-let player = [];
-let playerTimer = 0;
+let timeMachine = []; timeMachine.push( initialFEN ); let timeMachineStep = 0; // board on every status
 
 // Board logic =================================================================
 
@@ -68,8 +66,9 @@ function resetGame(){
     whosMoving = initialFEN.split(" ")[1] === 'w' ? 0:1; // 0 Whites
     isBoardFlipped = false;
     moveLog.length = 0;
-    renderChessBoard(64, boardArray);
+    renderChessBoard(boardSize, boardArray);
     updatePGNTextArea();
+    timeMachine = []; timeMachine.push( initialFEN ); timeMachineStep = 0;
 }
 
 function fenToBoardArray(fen) {
@@ -661,8 +660,40 @@ function logMove(from, to, piece) {
     // Castling notation
     if (piece.name[1] === 'K' && piece.castling ) { moveNotation = piece.castling === 'K' ? 'O-O' : 'O-O-O'; }
     
-    moveLog.push(moveNotation);
-    console.log("Move logged:", moveNotation);
+    moveLog.push(moveNotation);  
+}
+
+function timeMachineDo( time=0 ){
+
+    if (time==0){
+        timeMachine.push(  boardArrayToFEN(boardArray) );
+        timeMachineStep = timeMachine.length - 1;
+    }else{
+        var newPos = timeMachineStep + time;
+        if ( newPos >= 0 && newPos < timeMachine.length ) timeMachineStep += time;
+        else return;
+        console.log(  timeMachine[ timeMachineStep ] );
+        boardArray = fenToBoardArray( timeMachine[ timeMachineStep ] );
+        renderChessBoard(boardSize,boardArray);
+    }
+
+    document.getElementById('fwd').disabled = document.getElementById('bwd').disabled = true;
+    // Length > 0  
+    if (timeMachine.length > 0){
+        // We must enable back, now we have movements
+        document.getElementById('bwd').disabled = false;
+    }
+    // We are in the middle of the History? 
+    if ( timeMachineStep < timeMachine.length-1 ){
+        // We must enable back, now we have movements
+        document.getElementById('fwd').disabled = false;
+    }
+    // No more back moves
+    if( timeMachineStep == 0 ){
+        document.getElementById('bwd').disabled = true;
+    }
+
+
 }
 
 // Showing the PGN file in console
@@ -703,7 +734,8 @@ function boardArrayToFEN(boardArray) {
         if (r < 7) fen += '/';
     }
     
-    return fen + ` ${moveLog.length % 2 === 0 ? 'w' : 'b'} ${castlingString} ${enPassantTarget} ${halfmoveClock} ${fullmoveNumber}`;
+    fen = fen + ` ${moveLog.length % 2 === 0 ? 'w' : 'b'} ${castlingString} ${enPassantTarget} ${halfmoveClock} ${fullmoveNumber}`;
+    return fen;
 }
 
 // Update PGN textarea content
@@ -714,6 +746,7 @@ logMove = function(from, to, piece) {
     updateCastlingRights(from, to, piece);
     updateEnPassantTarget(from, to, piece);
     updateMoveCounters(from,to,piece);
+    timeMachineDo();
     updatePGNTextArea();
 };
 

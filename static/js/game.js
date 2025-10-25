@@ -30,9 +30,10 @@ const onemovetocastle = "rnbqk2r/pppp1ppp/5n2/2b1p3/2B1PP2/5N2/PPPP2PP/RNBQK2R b
 const promotionPawns = "rnbqk2r/pppp1P1p/7N/8/2B4b/8/PPP3pP/RNBQK2R b - - 0 19";
 const enPassant = "rnbqkbnr/ppp2ppp/4p3/3pP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 3";
 const enPassantB = "rnbqkbnr/ppp1pppp/8/8/3pP3/3P4/PPP2PPP/RNBQKBNR w KQkq - 0 3";
+const checkTest = "q3k3/8/8/8/8/8/8/4K2Q w q - 0 42";
 
 // Initial position in FEN
-const initialFEN = nowsBlackTrun;
+const initialFEN = checkTest;
 
 //
 // Note: FEN position is ALL for initial status of the board. The board should be set with fenToBoardArray
@@ -49,6 +50,8 @@ let whosMoving = initialFEN.split(" ")[1] === 'w' ? 0:1; // 0 Whites
 let isBoardFlipped = false;
 let allowedMovesPendingToConfirm = [];
 let timeMachine = []; timeMachine.push( initialFEN ); let timeMachineStep = 0; // board on every status
+let kingAttacked = { color: 'w', checked: false, row: 0, col:0 }; 
+
 
 // Board logic =================================================================
 
@@ -171,9 +174,11 @@ function renderChessBoard(squareSize = 64, boardArrayParam = null) {
             square.addEventListener('drop', function(e) {
                 e.preventDefault();
 
+                console.log( "Moves available pending to confirm: " + allowedMovesPendingToConfirm.length );
+
                 if (allowedMovesPendingToConfirm.length==0) return;
 
-                // if board is flipped, we need to adjust the row and col to match the actual boardArray
+                // if board is flipped, we need to adjust/transpose the row and col movement to match the actual boardArray
                 if (isBoardFlipped){
                     square.dataset.row = 7 - parseInt(square.dataset.row);
                     square.dataset.col = 7 - parseInt(square.dataset.col);
@@ -191,8 +196,10 @@ function renderChessBoard(squareSize = 64, boardArrayParam = null) {
                         return;
                     }   
                 } 
+
                 const from = draggedFrom;
                 const to = { row: parseInt(square.dataset.row), col: parseInt(square.dataset.col) };
+                
                 if (from && (from.row !== to.row || from.col !== to.col)) {
 
                     // Check Pawns to promote
@@ -249,6 +256,7 @@ function renderChessBoard(squareSize = 64, boardArrayParam = null) {
                         }
                     }
 
+
                     draggedFrom = null;
                     renderChessBoard(squareSize, boardArray);
                     // Log the move
@@ -276,8 +284,9 @@ function renderChessBoard(squareSize = 64, boardArrayParam = null) {
                 }
             });
 
-            // CORE for movement !!! Here is the logic to allow moving pieces
+            // CORE - PIECE CREATIONS IN PLACE 
             // First of all: If boardArray is provided, show piece image if present
+
             if (boardArray && boardArray[boardRowIdx] && boardArray[boardRowIdx][col]) {
                 const piece = boardArray[boardRowIdx][col];
                 const img = document.createElement('img');
@@ -321,6 +330,7 @@ function renderChessBoard(squareSize = 64, boardArrayParam = null) {
             container.appendChild(square);
                 
         }
+
         // Right label
         const rightLabel = document.createElement('div');
         rightLabel.className = 'chess-label right';
@@ -330,6 +340,7 @@ function renderChessBoard(squareSize = 64, boardArrayParam = null) {
             rightLabel.textContent = row;
         }
         container.appendChild(rightLabel);
+        
     }
 
     // Now we reverse the boardArray back if it was flipped just to keep logic consistent
@@ -349,6 +360,7 @@ function renderChessBoard(squareSize = 64, boardArrayParam = null) {
         container.appendChild(label);
     }
     container.appendChild(document.createElement('div'));
+
 }
 
 // CORE: Main movement function 
@@ -363,10 +375,116 @@ function movePiece(piece, position) {
     if (isBoardFlipped){
         position = { row: 7 - position.row, col: 7 - position.col};
     }
-
+    
     // CORE: We should now calculate and render the allowed moves for this piece
     allowedMovesPendingToConfirm = allowedMoves(position, piece);
+
+    console.log( " Allowed movements: " + allowedMovesPendingToConfirm.length ) ;
+
+    // CORE: Check if the allowed moves are allowed because of check / checkMate / staleMate
+    if(kingAttacked.checked){
+        allowedMovesPendingToConfirm = onlyMovesAvailable( allowedMovesPendingToConfirm, position, piece );
+    }
+
+    console.log( " Allowed movements: " + allowedMovesPendingToConfirm.length ) ;
+
     renderAllowedMoves(allowedMovesPendingToConfirm);
+}
+
+// CORE: Legal movements
+// From all the available moves we inspect in n+1 level which are allowed for the ACTIVE PLAYER
+function onlyMovesAvailable( moves, position, piece ){
+
+    //let boardArraySave = copyArrayBoard( boardArray ); // Saving the current board
+    let stillCheckedS = {};
+    let onlyMoves = [];
+
+    // From all the possible moves
+    moves.forEach(
+        function(lmove){
+
+            // We simulate the move and then we see if King is still checked so n+1 movements to calculate
+            
+            // Save
+            let fromPiece = boardArray[position.row][position.col]; 
+            let toPiece = boardArray[lmove.row][lmove.col];
+            
+            // Move
+            boardArray[position.row][position.col] = null; 
+            boardArray[lmove.row][lmove.col] = piece;
+
+            // Is the king still chequed? 
+            stillCheckedS = checkKingStatus();
+            
+            if (!stillCheckedS.checked){
+                onlyMoves.push( lmove );
+            }
+
+            // Restore
+            boardArray[position.row][position.col] = fromPiece; 
+            boardArray[lmove.row][lmove.col] = toPiece;
+        }
+    );
+    
+    return onlyMoves;
+}
+
+
+// Test if King is Check (Mated) or Stealmated
+// Calculating over the boardArray - ALWAYS the "TRUTH"!!! 
+// Returns: 1 - Check, 2 - Checkmated, 3 - Stealmated, 0 - safe
+function checkKingStatus(){
+    let enemy = currentTurn()==='w' ? 'b': 'w';
+    let allTheMoves = [];
+    let kingPosition = { row: 0, col: 0};
+    let allCaptures = [];
+    let ret =  { color: currentTurn(), checked: false, row: -1, col: -1 } ;
+
+    // TODO: Add here logic to flipped board!!!
+
+    
+    // We have to calculate all availables movements of the enemy
+    for( let r=0; r<8; r++){
+        for(let c=0; c<8; c++){
+            if( boardArray[r][c]!=null && boardArray[r][c].name[0]===enemy){
+                allTheMoves.push( allowedMoves( {row: r, col: c}, boardArray[r][c] ) );
+            }else{
+                if( boardArray[r][c]!=null && boardArray[r][c].name[1]==='K'){
+                    kingPosition.row = r; kingPosition.col = c;
+                }
+            }
+        }
+    }
+    
+    // Now we have all the possibles targets of our beloved enemy
+    // We should check if the King is attacked first
+    allTheMoves.forEach(
+        function ( lmove ){
+            if( lmove && lmove.length>0 ){
+                let something = lmove.filter( m=> m.capture === true );
+                if( something.length> 0)
+                    something.forEach(
+                        function ( o ){
+                            if ( o.row == kingPosition.row && o.col == kingPosition.col ){
+                                ret = { color: currentTurn(), checked: true, row: kingPosition.row, col: kingPosition.col } ;
+                            }
+                        }
+                    )
+            } 
+        }
+    );   
+
+    /* 
+    ** When checked King HAS TO scape or to SACRIFY other piece (no other move will be legal), we need to calculate King possible moves
+            + + +
+            + K + -> K possible moves: Min 1 Max 8 
+            + + +
+    
+    console.log ( "Enemy: " + enemy);
+    console.log ( "Kink Position: (" + kingPosition.row + "," + kingPosition.col + ")" );
+    console.log ( "Check:" + ret);
+    */
+    return ret;
 }
 
 // Renders the allowed moves as dots on the board
@@ -376,12 +494,12 @@ function renderAllowedMoves(moves) {
     const container = document.getElementById('chess-board-container');
     moves.forEach(move => {
         
-        console.log("Allowed move:", move);
+        // console.log("Allowed move:", move);
 
         if (isBoardFlipped){
             // row and col need to be trasposed to match the flipped board
             move = { row: 7 - move.row, col: 7 - move.col};
-            console.log("After flip:", move);
+            // console.log("After flip:", move);
         }
 
         const square = container.querySelector(`.chess-square[data-row='${move.row}'][data-col='${move.col}']`);
@@ -394,7 +512,7 @@ function renderAllowedMoves(moves) {
             square.appendChild(dot);
 
             // Capture? 
-            console.log( "Available move: " + move.row + ", " + move.col +" capture: "+ move.capture + " enpassant: " + move.enpassant);
+            // console.log( "Available move: " + move.row + ", " + move.col +" capture: "+ move.capture + " enpassant: " + move.enpassant);
             if ( move.capture===true || move.enpassant===true ) {
                 square.className += " capture";
             }
@@ -408,7 +526,7 @@ function renderAllowedMoves(moves) {
 // Params: Piece Obj { name: "wP", row: int, col: int } , choose = ['q','r','b','n']
 function promotionFinalle(piece,choose){
 
-    console.log("Piece:" + piece + " Choose:"+ choose);
+    // console.log("Piece:" + piece + " Choose:"+ choose);
     let promotedName = piece.name[0] + choose;
     // TODO: hardcoded path is not good, change!
     boardArray[ piece.row ][ piece.col ] = { name: promotedName, src: './static/themes/default/pieces/'+ promotedName+'.png' }
@@ -420,7 +538,7 @@ function promotionFinalle(piece,choose){
     moveLog[ moveLog.length - 1 ] = moveLog[ moveLog.length-1 ] + "=" + choose;
 
     // And... update the PGN window
-    showPGN();
+    updatePGNTextArea();
     
 }
 
@@ -589,8 +707,6 @@ function getKingMoves(from, color) {
         }
     }
 
-    console.log("King moves:", moves);
-    
     return moves;
 }
 
@@ -663,6 +779,7 @@ function logMove(from, to, piece) {
     moveLog.push(moveNotation);  
 }
 
+
 function timeMachineDo( time=0 ){
 
     if (time==0){
@@ -672,9 +789,11 @@ function timeMachineDo( time=0 ){
         var newPos = timeMachineStep + time;
         if ( newPos >= 0 && newPos < timeMachine.length ) timeMachineStep += time;
         else return;
-        console.log(  timeMachine[ timeMachineStep ] );
+        // console.log(  timeMachine[ timeMachineStep ] );
         boardArray = fenToBoardArray( timeMachine[ timeMachineStep ] );
+        // Update visuals
         renderChessBoard(boardSize,boardArray);
+        updatePGNTextArea();
     }
 
     document.getElementById('fwd').disabled = document.getElementById('bwd').disabled = true;
@@ -692,21 +811,6 @@ function timeMachineDo( time=0 ){
     if( timeMachineStep == 0 ){
         document.getElementById('bwd').disabled = true;
     }
-
-
-}
-
-// Showing the PGN file in console
-function showPGN() {
-    let pgn = "[Event \"?\"]\n[Site \"?\"]\n[Date \"????.??.??\"]\n[Round \"?\"]\n[White \"?\"]\n[Black \"?\"]\n[Result \"*\"]\n\n";
-    for (let i = 0; i < moveLog.length; i++) {
-        if (i % 2 === 0) {
-            pgn += ((i / 2) + 1) + ". ";
-        }
-        pgn += moveLog[i] + " ";
-    }
-    pgn += "*";
-    console.log("PGN:\n" + pgn);
 }
 
 // Board to FEN string of the current board position
@@ -748,6 +852,14 @@ logMove = function(from, to, piece) {
     updateMoveCounters(from,to,piece);
     timeMachineDo();
     updatePGNTextArea();
+    kingAttacked = checkKingStatus();
+    
+    // Check view
+    if( kingAttacked.checked ){
+        const container = document.getElementById('chess-board-container');
+        const square = container.querySelector(`.chess-square[data-row='${kingAttacked.row}'][data-col='${kingAttacked.col}']`);
+        square.className += " check";
+    }
 };
 
 // 3) - ALL FEN auxiliar functions to keep FEN fields updated

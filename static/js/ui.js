@@ -37,16 +37,18 @@ sideMenuToggle.onclick = () => {
 
 // PGN area update logic
 function updatePGNTextArea() {
-    const pgnArea = document.getElementById('pgn-area');
     let p1 = document.getElementById('player1-name').value || '?';
     let p2 = document.getElementById('player2-name').value || '?';
     let pgn = `[Event "?"]\n[Site "?"]\n[Date "????.??.??"]\n[Round "?"]\n[White "${p1}"]\n[Black "${p2}"]\n[Result "*"]\n\n`;
-    for (let i = 0; i < moveLog.length; i++) {
+    let lastMoveVisible = moveLog.length;
+    if (timeMachineStep>0) lastMoveVisible = timeMachineStep;
+
+    for (let i = 0; i < lastMoveVisible; i++) {
         if (i % 2 === 0) pgn += ((i / 2) + 1) + ". ";
         pgn += moveLog[i] + " ";
     }
     pgn += "*";
-    pgnArea.value = pgn;
+    document.getElementById('pgn-area').value = pgn;
 }
 
 // Update PGN area when player names change

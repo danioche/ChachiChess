@@ -30,10 +30,10 @@ const onemovetocastle = "rnbqk2r/pppp1ppp/5n2/2b1p3/2B1PP2/5N2/PPPP2PP/RNBQK2R b
 const promotionPawns = "rnbqk2r/pppp1P1p/7N/8/2B4b/8/PPP3pP/RNBQK2R b - - 0 19";
 const enPassant = "rnbqkbnr/ppp2ppp/4p3/3pP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 3";
 const enPassantB = "rnbqkbnr/ppp1pppp/8/8/3pP3/3P4/PPP2PPP/RNBQKBNR w KQkq - 0 3";
-const checkTest = "q3k3/8/8/8/8/8/8/4K2Q w q - 0 42";
+const checkTest = "q3k3/8/8/8/8/8/8/4K2Q w - - 0 42";
 
 // Initial position in FEN
-const initialFEN = checkTest;
+const initialFEN = startBoard;
 
 //
 // Note: FEN position is ALL for initial status of the board. The board should be set with fenToBoardArray
@@ -379,15 +379,9 @@ function movePiece(piece, position) {
     // CORE: We should now calculate and render the allowed moves for this piece
     allowedMovesPendingToConfirm = allowedMoves(position, piece);
 
-    console.log( " Allowed movements: " + allowedMovesPendingToConfirm.length ) ;
-
     // CORE: Check if the allowed moves are allowed because of check / checkMate / staleMate
-    if(kingAttacked.checked){
-        allowedMovesPendingToConfirm = onlyMovesAvailable( allowedMovesPendingToConfirm, position, piece );
-    }
-
-    console.log( " Allowed movements: " + allowedMovesPendingToConfirm.length ) ;
-
+    allowedMovesPendingToConfirm = onlyMovesAvailable( allowedMovesPendingToConfirm, position, piece );
+    
     renderAllowedMoves(allowedMovesPendingToConfirm);
 }
 
@@ -416,6 +410,7 @@ function onlyMovesAvailable( moves, position, piece ){
             // Is the king still chequed? 
             stillCheckedS = checkKingStatus();
             
+
             if (!stillCheckedS.checked){
                 onlyMoves.push( lmove );
             }
@@ -432,16 +427,14 @@ function onlyMovesAvailable( moves, position, piece ){
 
 // Test if King is Check (Mated) or Stealmated
 // Calculating over the boardArray - ALWAYS the "TRUTH"!!! 
-// Returns: 1 - Check, 2 - Checkmated, 3 - Stealmated, 0 - safe
-function checkKingStatus(){
-    let enemy = currentTurn()==='w' ? 'b': 'w';
+// Returns: KingObject pointing the status in regard of checked
+// Enemy: Can be a parameter for pinned pieces to check, for normal check will be just the not moving pieces color
+function checkKingStatus( enemy = currentTurn()==='w' ? 'b': 'w' ){
     let allTheMoves = [];
     let kingPosition = { row: 0, col: 0};
-    let allCaptures = [];
     let ret =  { color: currentTurn(), checked: false, row: -1, col: -1 } ;
 
     // TODO: Add here logic to flipped board!!!
-
     
     // We have to calculate all availables movements of the enemy
     for( let r=0; r<8; r++){
@@ -474,16 +467,6 @@ function checkKingStatus(){
         }
     );   
 
-    /* 
-    ** When checked King HAS TO scape or to SACRIFY other piece (no other move will be legal), we need to calculate King possible moves
-            + + +
-            + K + -> K possible moves: Min 1 Max 8 
-            + + +
-    
-    console.log ( "Enemy: " + enemy);
-    console.log ( "Kink Position: (" + kingPosition.row + "," + kingPosition.col + ")" );
-    console.log ( "Check:" + ret);
-    */
     return ret;
 }
 

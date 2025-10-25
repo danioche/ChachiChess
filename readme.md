@@ -36,20 +36,24 @@ ChachiChess is a simple, interactive chessboard web application. It displays a c
 
 ## License
 
-[Specify your license here, e.g., MIT]
-
+All rights to @danioche 
 
 # TODOs, ideas and much more
 
 Currently working on:
 
-- Castling movements
-- Capture movements
-- Checking
-- Initial version of chat and play against bot
+- Initial version of chat 
+- Engine integrated at backend level, pending to integrate with FE/UI
+
+List of known bugs to work on:
+
+- Flip board should be checked for checks and for Queen and King position, it is wrong!!
+- Sometimes random allowed movements outside the board. Nice :D 
 
 List of things that I will love to add:
 
+- Play against bot 
 - Multi-language support
 - Conversations during the game with teachers and avatars
 - Interactivity online and offline
+

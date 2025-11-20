@@ -31,9 +31,12 @@ const promotionPawns = "rnbqk2r/pppp1P1p/7N/8/2B4b/8/PPP3pP/RNBQK2R b - - 0 19";
 const enPassant = "rnbqkbnr/ppp2ppp/4p3/3pP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 3";
 const enPassantB = "rnbqkbnr/ppp1pppp/8/8/3pP3/3P4/PPP2PPP/RNBQKBNR w KQkq - 0 3";
 const checkTest = "q3k3/8/8/8/8/8/8/4K2Q w - - 0 42";
+const lesson= "7k/5ppp/8/8/8/8/8/2R1K3 w KQkq - 0 1";
+const lesson2= "7k/5pp1/7p/8/8/8/8/2R1K3 w KQkq - 0 1";
+const lesson3= "8/4KP1k/6p1/6P1/8/8/8/8 w KQkq - 0 1";
 
 // Initial position in FEN
-const initialFEN = startBoard;
+const initialFEN = lesson;
 
 //
 // Note: FEN position is ALL for initial status of the board. The board should be set with fenToBoardArray
@@ -410,7 +413,6 @@ function onlyMovesAvailable( moves, position, piece ){
             // Is the king still chequed? 
             stillCheckedS = checkKingStatus();
             
-
             if (!stillCheckedS.checked){
                 onlyMoves.push( lmove );
             }
@@ -430,17 +432,17 @@ function onlyMovesAvailable( moves, position, piece ){
 // Returns: KingObject pointing the status in regard of checked
 // Enemy: Can be a parameter for pinned pieces to check, for normal check will be just the not moving pieces color
 function checkKingStatus( enemy = currentTurn()==='w' ? 'b': 'w' ){
-    let allTheMoves = [];
+    let allEnemyMoves = []; // Moves by the enemy
     let kingPosition = { row: 0, col: 0};
-    let ret =  { color: currentTurn(), checked: false, row: -1, col: -1 } ;
-
+    let player = currentTurn();
+    
     // TODO: Add here logic to flipped board!!!
     
     // We have to calculate all availables movements of the enemy
     for( let r=0; r<8; r++){
         for(let c=0; c<8; c++){
             if( boardArray[r][c]!=null && boardArray[r][c].name[0]===enemy){
-                allTheMoves.push( allowedMoves( {row: r, col: c}, boardArray[r][c] ) );
+                allEnemyMoves.push( allowedMoves( {row: r, col: c}, boardArray[r][c] ) );
             }else{
                 if( boardArray[r][c]!=null && boardArray[r][c].name[1]==='K'){
                     kingPosition.row = r; kingPosition.col = c;
@@ -449,23 +451,28 @@ function checkKingStatus( enemy = currentTurn()==='w' ? 'b': 'w' ){
         }
     }
     
+    let ret =  { color: player, checked: false, mated:false, stealmated:false, row: kingPosition.row, col: kingPosition.col } ;
+
     // Now we have all the possibles targets of our beloved enemy
     // We should check if the King is attacked first
-    allTheMoves.forEach(
+    allEnemyMoves.forEach(
         function ( lmove ){
             if( lmove && lmove.length>0 ){
-                let something = lmove.filter( m=> m.capture === true );
-                if( something.length> 0)
-                    something.forEach(
+                let capturing = lmove.filter( m=> m.capture === true );
+                if( capturing.length> 0)
+                    capturing.forEach(
                         function ( o ){
+                            // When the capture implies the position of the current King you are checked!
                             if ( o.row == kingPosition.row && o.col == kingPosition.col ){
-                                ret = { color: currentTurn(), checked: true, row: kingPosition.row, col: kingPosition.col } ;
+                                // Now you are checked
+                                ret.checked = true;
                             }
                         }
                     )
             } 
         }
-    );   
+    );
+    
 
     return ret;
 }
@@ -520,9 +527,12 @@ function promotionFinalle(piece,choose){
     // Now we should log the correct movement we should modify the Log
     moveLog[ moveLog.length - 1 ] = moveLog[ moveLog.length-1 ] + "=" + choose;
 
+    // And... we check again the status of the king
+    checkKingMateOrSteal();
+
     // And... update the PGN window
     updatePGNTextArea();
-    
+
 }
 
 // Pawn moves generator
@@ -834,16 +844,93 @@ logMove = function(from, to, piece) {
     updateEnPassantTarget(from, to, piece);
     updateMoveCounters(from,to,piece);
     timeMachineDo();
+
+    checkKingMateOrSteal();
+
     updatePGNTextArea();
-    kingAttacked = checkKingStatus();
-    
-    // Check view
-    if( kingAttacked.checked ){
+
+};
+
+
+//
+// CORE - CHECKING MATES 
+// 
+//
+// After a check we enter in a final status - It is a final Mate or a StealMate or can be avoided?
+function checkKingMateOrSteal()
+{
+    let player = currentTurn();
+    let allPlayerMoves = [];
+    let onlyAllowedPlayerMoves = [];
+
+    let kingAttacked = checkKingStatus();
+
+    // Without any interaction of the user system has to know if there is a checkmate, stealmate or are "forced movements"
+
+    // Prospect all the movements
+    for( let r=0; r<8; r++){
+        for(let c=0; c<8; c++){
+            if( boardArray[r][c]!=null && boardArray[r][c].name[0]===player){
+                let temp = allowedMoves( {row: r, col: c}, boardArray[r][c] );
+                onlyAllowedPlayerMoves = onlyMovesAvailable( temp, { row: r, col: c }, boardArray[r][c]);
+                if ( onlyAllowedPlayerMoves.length > 0 ) allPlayerMoves.push( onlyAllowedPlayerMoves );
+            }
+        }
+    }
+
+    console.log ( " Player: " + player );
+    console.log ( " King " + kingAttacked.checked + " pos: ( " + kingAttacked.row + "," + kingAttacked.col + ") ");
+    console.log ( " Find " + allPlayerMoves.length + " Movements after check" );
+
+    // Evaluating what is happening:
+
+    if ( kingAttacked.checked && allPlayerMoves.length == 0 ){
+
+        // CHECK MATE - game over!!
+        const container = document.getElementById('chess-board-container');
+        const square = container.querySelector(`.chess-square[data-row='${kingAttacked.row}'][data-col='${kingAttacked.col}']`);
+        square.className += " checkmate";
+
+        kingAttacked.mated = true;
+        moveLog[ moveLog.length - 1 ] = moveLog[ moveLog.length-1 ] + "#";
+
+        // Show win popup
+        const winner = player === 'w' ? 'Black' : 'White';
+        showWinPopup(winner, 'Checkmate');
+
+        return kingAttacked;
+    }
+
+    if ( !kingAttacked.checked && allPlayerMoves.length == 0 ){
+
+        // STEALMATE - game over!!! DRAW!!!
+        const container = document.getElementById('chess-board-container');
+        const square = container.querySelector(`.chess-square[data-row='${kingAttacked.row}'][data-col='${kingAttacked.col}']`);
+        square.className += " stealmate";
+
+        kingAttacked.stealmated = true;
+
+        moveLog[ moveLog.length ] = "1/2-1/2";
+
+        // Show draw popup
+        showWinPopup('Draw', 'Stalemate');
+
+        return kingAttacked;
+    }
+
+    if ( kingAttacked.checked ){
+
+        // CHECK! But game ON!!
         const container = document.getElementById('chess-board-container');
         const square = container.querySelector(`.chess-square[data-row='${kingAttacked.row}'][data-col='${kingAttacked.col}']`);
         square.className += " check";
+
+        moveLog[ moveLog.length - 1 ] = moveLog[ moveLog.length-1 ] + "+";
+
+        return kingAttacked;
     }
-};
+
+}
 
 // 3) - ALL FEN auxiliar functions to keep FEN fields updated
 // ----------------------------------------------------------------------------- 

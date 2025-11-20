@@ -29,6 +29,16 @@ ChachiChess is a simple, interactive chessboard web application. It displays a c
 - `static/themes/default/pieces/` - Folder for chess piece images
 - 
 
+## Lessons Chess file (CHL)
+
+### Inspiration
+
+This is a new type of file that uses some inspiration: based in FEN and PGN to know which are the options, also I use some of ORG type for the file contentes to preserve the spirit of an open file that can be interpreted by a human and also a computer.
+
+Documentation: See /classroom/format.md
+
+
+
 ## Credits
 
 - Chess piece images: [Your source or credits here]
@@ -44,6 +54,7 @@ Currently working on:
 
 - Initial version of chat 
 - Engine integrated at backend level, pending to integrate with FE/UI
+- Lessons and Teacher interaction
 
 List of known bugs to work on:
 
@@ -52,6 +63,7 @@ List of known bugs to work on:
 
 List of things that I will love to add:
 
+- Lessons and Teacher interaction
 - Play against bot 
 - Multi-language support
 - Conversations during the game with teachers and avatars

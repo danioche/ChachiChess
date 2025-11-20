@@ -1,0 +1,34 @@
+# Chess Lesson file
+#+Title: Begginer and Intermediate 
+#+Description: This lessons is a set of plays to illustrate the basics concepts on checkmate
+#+Author: Daniel Pedroche
+#+Language: en
+#+Avatar: teachers_danioche
+
+#+StartingPosition: "7k/5ppp/8/8/8/8/8/2R1K3 w d2 d2 0 1"
+
+#+Begin_teacher
+
+Hi! today we are going to learn the main concept of Chess the *checkmate*. 
+Here is an starting position. 
+Find the checkmate!
+
+#+End_teacher
+
+#+Begin_tips
+
+- As you may notice black King is in trouble, seems like he is standing on a corridor without exit. Any idea to block it having the King without any escape? 
+
+#+End_tips
+
+#+Begin_move_list
+
+PGN: 1. Rc8#
+
+That's correct, you found the checkmate, this is called the "Back rank (or Corridor) mate.
+
+PGN: 1. *
+
+Sorry this is not the move, try again.
+
+#+End_move_list

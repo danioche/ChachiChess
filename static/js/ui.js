@@ -16,6 +16,32 @@ document.getElementById('modal-dialog').onclick = function(e) {
         if (e.target === this) hideModalDialog();
 };
 
+// Win popup logic
+function showWinPopup(winner, reason) {
+        const p1 = document.getElementById('player1-name').value || '?';
+        const p2 = document.getElementById('player2-name').value || '?';
+        const winnerName = winner === 'White' ? p1 : (winner === 'Black' ? p2 : 'Both Players');
+        
+        let html = `
+            <div style="text-align: center; padding: 20px;">
+                <h2 style="color: #4a90e2; font-size: 2em; margin-bottom: 15px;">🎉 Game Over! 🎉</h2>
+                <div style="font-size: 1.8em; margin: 20px 0; color: #2c3e50;">
+                    <strong>${winner === 'Draw' ? '🤝 Draw' : '👑 ' + winnerName + ' Wins'}</strong>
+                </div>
+                <div style="font-size: 1.2em; color: #666; margin-bottom: 20px;">
+                    ${reason}
+                </div>
+                <button id="win-close-btn" style="background: #4a90e2; color: white; border: none; padding: 12px 24px; font-size: 1em; border-radius: 6px; cursor: pointer;">Play Again</button>
+            </div>
+        `;
+        
+        showModalDialog(html);
+        document.getElementById('win-close-btn').onclick = function() {
+                hideModalDialog();
+                resetGame();
+        };
+}
+
 // Buttons and actions logics
 // -----------------------------------------------------------------------------
 
@@ -47,7 +73,11 @@ function updatePGNTextArea() {
         if (i % 2 === 0) pgn += ((i / 2) + 1) + ". ";
         pgn += moveLog[i] + " ";
     }
-    pgn += "*";
+
+    if( lastMoveVisible==0 ) pgn += "*";
+    if( lastMoveVisible > 0 && moveLog[lastMoveVisible-1].indexOf("#") <=0 &&  moveLog[lastMoveVisible-1].indexOf("1/2-1/2")<=0 ) pgn += "*";
+
+
     document.getElementById('pgn-area').value = pgn;
 }
 

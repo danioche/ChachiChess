@@ -1,0 +1,202 @@
+#connected-users ul {
+    padding-left: 0;
+}
+#connected-users ul li {
+    margin-bottom: 6px;
+    display:inline-block;
+    margin-right:12px;
+    vertical-align:middle;
+}
+#connected-users ul li img {
+    vertical-align:middle;
+    border-radius:50%;
+    margin-right:6px;
+}
+#connected-users ul li button {
+    background:none;
+    border:none;
+    font-size:1em;
+    color:#4a90e2;
+    cursor:default;
+}
+#connected-users ul li button#chat-with-teacher-btn {
+    background:#4a90e2;
+    color:#fff;
+    border:none;
+    padding:2px 8px;
+    font-size:0.85em;
+    border-radius:4px;
+    cursor:pointer;
+}
+#promotion-modal {
+    display: none;
+    position: fixed;
+    z-index: 3000;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 32px rgba(0,0,0,0.18);
+    padding: 12px 10px;
+    min-width: 60px;
+    min-height: 240px;
+    transition: opacity 0.15s;
+}
+#promotion-modal-grid {
+    display: grid;
+    grid-template-rows: repeat(4, 1fr);
+    gap: 10px;
+}
+.promotion-piece-btn {
+    background: none;
+    border: none;
+    font-size: 2em;
+    cursor: pointer;
+    width: 48px;
+    height: 48px;
+    border-radius: 6px;
+    transition: background 0.15s;
+}
+.promotion-piece-btn:hover {
+    background: #f1f3fa;
+}
+.notification-box {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    padding: 12px;
+    display: flex;
+    gap: 12px;
+    align-items: stretch;
+    min-width: 280px;
+    max-width: 360px;
+    animation: slideInRight 0.3s ease-out;
+    border-left: 4px solid #4a90e2;
+}
+
+.notification-box.success {
+    border-left-color: #27ae60;
+}
+
+.notification-box.warning {
+    border-left-color: #f39c12;
+}
+
+.notification-box.error {
+    border-left-color: #e74c3c;
+}
+
+.notification-box.info {
+    border-left-color: #4a90e2;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+}
+
+.notification-image {
+    width: 60px;
+    height: 60px;
+    border-radius: 6px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.notification-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.notification-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 6px;
+}
+
+.notification-title {
+    font-weight: 600;
+    font-size: 0.95em;
+    color: #2c3e50;
+}
+
+.notification-message {
+    font-size: 0.85em;
+    color: #555;
+    line-height: 1.4;
+}
+
+.notification-actions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.notification-btn {
+    background: #4a90e2;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 0.8em;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.notification-btn:hover {
+    background: #357abd;
+}
+
+.notification-btn.secondary {
+    background: #ecf0f1;
+    color: #2c3e50;
+}
+
+.notification-btn.secondary:hover {
+    background: #d5dbdb;
+}
+
+.notification-close {
+    align-self: flex-start;
+    background: none;
+    border: none;
+    font-size: 1.2em;
+    color: #bbb;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+}
+
+.notification-close:hover {
+    color: #999;
+}
+
+.notification-removing {
+    animation: slideOutRight 0.3s ease-out forwards;
+}

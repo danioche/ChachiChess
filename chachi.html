@@ -9,9 +9,43 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="static/css/board.css">
     <link rel="stylesheet" href="static/css/menu.css">
+    <link rel="stylesheet" href="static/css/chat.css">
 </head>
 <body>
 <button id="side-menu-toggle" title="Menu">&#9776;</button>
+<div id="scoreboards-container" style="display: flex; gap: 12px; justify-content: center; padding: 12px 0; background: #f7f7fa; border-bottom: 1px solid #e0e0e0;">
+    <!-- White Player Scoreboard -->
+    <div id="scoreboard-white" style="background: white; border-radius: 8px; padding: 12px 16px; border: 2px solid #d4af37; min-width: 200px; text-align: center;">
+        <div style="font-weight: 600; font-size: 0.95em; color: #333; margin-bottom: 8px;">White's Capture</div>
+        <div style="display: flex; align-items: center; justify-content: center; gap: 12px;">
+            <div style="flex: 1;">
+                <div id="white-pieces" style="font-size: 1.2em; line-height: 1.4; min-height: 40px; display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; align-items: center;">
+                    <!-- Captured pieces will appear here -->
+                </div>
+            </div>
+            <div style="text-align: center; padding-left: 12px; border-left: 2px solid #e0e0e0;">
+                <div style="font-size: 0.85em; color: #666;">Points</div>
+                <div id="white-points" style="font-size: 1.8em; font-weight: bold; color: #d4af37;">0</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Black Player Scoreboard -->
+    <div id="scoreboard-black" style="background: white; border-radius: 8px; padding: 12px 16px; border: 2px solid #333; min-width: 200px; text-align: center;">
+        <div style="font-weight: 600; font-size: 0.95em; color: #333; margin-bottom: 8px;">Black's Capture</div>
+        <div style="display: flex; align-items: center; justify-content: center; gap: 12px;">
+            <div style="flex: 1;">
+                <div id="black-pieces" style="font-size: 1.2em; line-height: 1.4; min-height: 40px; display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; align-items: center;">
+                    <!-- Captured pieces will appear here -->
+                </div>
+            </div>
+            <div style="text-align: center; padding-left: 12px; border-left: 2px solid #e0e0e0;">
+                <div style="font-size: 0.85em; color: #666;">Points</div>
+                <div id="black-points" style="font-size: 1.8em; font-weight: bold; color: #333;">0</div>
+            </div>
+        </div>
+    </div>
+</div>
 <div id="side-menu">
     <div id="side-menu-header">ChachiChess &#9822;&#9823;</div>
     <div id="side-menu-content">
@@ -48,39 +82,6 @@
         <!-- Add your right menu content here -->
         <p>Here you can chat with the lovely people of the ChachiChess Club</p>
     
-        <!-- Connected users -->
-         <style>
-            #connected-users ul {
-                padding-left: 0;
-            }
-            #connected-users ul li {
-                margin-bottom: 6px;
-                display:inline-block;
-                margin-right:12px;
-                vertical-align:middle;
-            }
-            #connected-users ul li img {
-                vertical-align:middle;
-                border-radius:50%;
-                margin-right:6px;
-            }
-            #connected-users ul li button {
-                background:none;
-                border:none;
-                font-size:1em;
-                color:#4a90e2;
-                cursor:default;
-            }
-            #connected-users ul li button#chat-with-teacher-btn {
-                background:#4a90e2;
-                color:#fff;
-                border:none;
-                padding:2px 8px;
-                font-size:0.85em;
-                border-radius:4px;
-                cursor:pointer;
-            }
-        </style>
         <div id="connected-users" style="margin-bottom:18px;">
             <strong>Connected Users:</strong>
             <ul id="user-list" style="list-style:none; padding-left:0; margin-top:6px;">
@@ -152,38 +153,6 @@ rightMenu.addEventListener('transitionend', () => {
 });
 rightMenuToggle.style.display = '';
 </script>
-<style>
-#promotion-modal {
-    display: none;
-    position: fixed;
-    z-index: 3000;
-    background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 4px 32px rgba(0,0,0,0.18);
-    padding: 12px 10px;
-    min-width: 60px;
-    min-height: 240px;
-    transition: opacity 0.15s;
-}
-#promotion-modal-grid {
-    display: grid;
-    grid-template-rows: repeat(4, 1fr);
-    gap: 10px;
-}
-.promotion-piece-btn {
-    background: none;
-    border: none;
-    font-size: 2em;
-    cursor: pointer;
-    width: 48px;
-    height: 48px;
-    border-radius: 6px;
-    transition: background 0.15s;
-}
-.promotion-piece-btn:hover {
-    background: #f1f3fa;
-}
-</style>
 <div id="promotion-modal">
     <div id="promotion-modal-grid">
         <button class="promotion-piece-btn" data-piece="Q" title="Queen">&#9819;</button>
@@ -236,11 +205,27 @@ function hidePromotionModal() {
         <div id="modal-content"></div>
     </div>
 </div>
+
+<!-- Notification Container -->
+<div id="notification-container" style="position: fixed; bottom: 20px; right: 20px; z-index: 2100; display: flex; flex-direction: column; gap: 12px; max-width: 360px;">
+</div>
+
 <script src="static/js/game.js"></script>
 <script src="static/js/ui.js"></script>
 <script>
 // Initial render with default size and boardArray
 renderChessBoard(64, boardArray);
+showNotification(
+    'Hola!',
+    'Bienvenid@ a ChachiChess!',
+    '/static/themes/default/teachers/daniocheChessTeacher_avatar2.png',
+    'info',
+    5000,
+    [
+        { label: 'Accept', callback: () => console.log('Accepted'), isSecondary: false },
+        { label: 'Decline', callback: () => console.log('Declined'), isSecondary: true }
+    ]
+);
 </script>
 </body>
 </html>

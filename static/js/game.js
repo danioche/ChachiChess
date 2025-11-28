@@ -35,8 +35,11 @@ const lesson= "7k/5ppp/8/8/8/8/8/2R1K3 w KQkq - 0 1";
 const lesson2= "7k/5pp1/7p/8/8/8/8/2R1K3 w KQkq - 0 1";
 const lesson3= "8/4KP1k/6p1/6P1/8/8/8/8 w KQkq - 0 1";
 
+// Points per piece
+const pointsPiece = { "P": 1, "N": 3, "B": 3, "R": 5, "Q": 10 };
+
 // Initial position in FEN
-const initialFEN = lesson;
+const initialFEN = startBoard;
 
 //
 // Note: FEN position is ALL for initial status of the board. The board should be set with fenToBoardArray
@@ -54,7 +57,8 @@ let isBoardFlipped = false;
 let allowedMovesPendingToConfirm = [];
 let timeMachine = []; timeMachine.push( initialFEN ); let timeMachineStep = 0; // board on every status
 let kingAttacked = { color: 'w', checked: false, row: 0, col:0 }; 
-
+let scoreBoard = { w:{ points: 0, pieces: [] },
+                   b:{ points: 0, pieces: [] } };
 
 // Board logic =================================================================
 
@@ -72,8 +76,10 @@ function resetGame(){
     whosMoving = initialFEN.split(" ")[1] === 'w' ? 0:1; // 0 Whites
     isBoardFlipped = false;
     moveLog.length = 0;
+    scoreBoard = { w:{ points: 0, pieces: [] }, b:{ points: 0, pieces: [] } };
     renderChessBoard(boardSize, boardArray);
     updatePGNTextArea();
+    updateScoreboard();
     timeMachine = []; timeMachine.push( initialFEN ); timeMachineStep = 0;
 }
 
@@ -216,6 +222,9 @@ function renderChessBoard(squareSize = 64, boardArrayParam = null) {
                                           { name: boardArray[from.row][from.col].name, row: to.row, col: to.col });
                     }
                     
+                    // If to - dest is a piece this should be stored on the "score" of the current player
+                    if (boardArray[to.row][to.col]!=null) scorePiece( boardArray[to.row][to.col] );
+
                     // Move piece in boardArray
                     boardArray[to.row][to.col] = boardArray[from.row][from.col];
                     boardArray[from.row][from.col] = null;
@@ -307,7 +316,6 @@ function renderChessBoard(squareSize = 64, boardArrayParam = null) {
                     e.dataTransfer.setData('text/plain', 'Moviendo pieza');
                     draggedFrom = { row: boardRowIdx, col: col };
                     
-                    // TODO: call main move function
                     movePiece(piece, draggedFrom);
 
                 });
@@ -363,7 +371,9 @@ function renderChessBoard(squareSize = 64, boardArrayParam = null) {
         container.appendChild(label);
     }
     container.appendChild(document.createElement('div'));
-
+    
+    // Update scoreboard
+    updateScoreboard();
 }
 
 // CORE: Main movement function 
@@ -426,7 +436,6 @@ function onlyMovesAvailable( moves, position, piece ){
     return onlyMoves;
 }
 
-
 // Test if King is Check (Mated) or Stealmated
 // Calculating over the boardArray - ALWAYS the "TRUTH"!!! 
 // Returns: KingObject pointing the status in regard of checked
@@ -436,7 +445,6 @@ function checkKingStatus( enemy = currentTurn()==='w' ? 'b': 'w' ){
     let kingPosition = { row: 0, col: 0};
     let player = currentTurn();
     
-    // TODO: Add here logic to flipped board!!!
     
     // We have to calculate all availables movements of the enemy
     for( let r=0; r<8; r++){
@@ -488,7 +496,7 @@ function renderAllowedMoves(moves) {
 
         if (isBoardFlipped){
             // row and col need to be trasposed to match the flipped board
-            move = { row: 7 - move.row, col: 7 - move.col};
+            move = { row: 7 - move.row, col: 7 - move.col, capture: move.capture, enpassant: move.enpassant, castling: move.castling };
             // console.log("After flip:", move);
         }
 
@@ -501,8 +509,6 @@ function renderAllowedMoves(moves) {
             dot.id = `move-dot-${move.row}-${move.col}-${move.capture ? 'capture' : 'normal'}-${move.castling ? move.castling : ''}`;
             square.appendChild(dot);
 
-            // Capture? 
-            // console.log( "Available move: " + move.row + ", " + move.col +" capture: "+ move.capture + " enpassant: " + move.enpassant);
             if ( move.capture===true || move.enpassant===true ) {
                 square.className += " capture";
             }
@@ -559,7 +565,6 @@ function getPawnMoves(from, color) {
         }
         
         // Checks en-passant targets available 
-        // TODO: Refactor this! - Movement added will depend on the direction of the piece different for black and white
         if( color === "w" ){
             if ( files[8-c]+(8-r) == enPassantTarget ) {
                 moves.push({ row: r, col: 8-c , capture: true, enpassant: true});
@@ -621,15 +626,18 @@ function getRookMoves(from, color) {
 function getBishopMoves(from, color) {
     const moves = [];
     const enemy = color === 'w' ? 'b' : 'w';
+
     // Four diagonals
     for (let dr = -1; dr <= 1; dr += 2) {
         for (let dc = -1; dc <= 1; dc += 2) {
             let r = from.row + dr, c = from.col + dc;
+            
             while (r >= 0 && r < 8 && c >= 0 && c < 8) {
                 if (boardArray[r][c] === null) {
                     moves.push({ row: r, col: c, capture: false });
                 } else {
-                    if (boardArray[r][c].name[0] === enemy) moves.push({ row: r, col: c, capture: true });
+
+                    if (boardArray[r][c].name[0] == enemy) moves.push( { row: r, col: c, capture: true } );
                     break;
                 }
                 r += dr;
@@ -744,8 +752,41 @@ function clearAllowedMoves(){
     document.querySelectorAll('.move-dot').forEach(dot=>{
         dot.remove();
     });
+    document.querySelectorAll('.capture').forEach(square=>{
+        square.className = square.className.replace("capture", "");
+    });
 }       
 
+// The following function stores the captured piece and updates the score
+function scorePiece( piece ){
+    scoreBoard[ currentTurn() ].points += parseInt(pointsPiece[ piece.name[1] ], 0);
+    scoreBoard[ currentTurn() ].pieces.push( piece ); 
+}
+
+// Update the visual scoreboard display
+function updateScoreboard() {
+    // Piece unicode symbols mapping
+    const pieceSymbols = {
+        'wP': '&#9817;', 'wR': '&#9814;', 'wB': '&#9815;', 'wN': '&#9816;', 'wQ': '&#9813;', 'wK': '&#9812;',
+        'bP': '&#9823;', 'bR': '&#9820;', 'bB': '&#9821;', 'bN': '&#9822;', 'bQ': '&#9819;', 'bK': '&#9818;'
+    };
+    
+    // Update White's scoreboard
+    const whitePiecesDiv = document.getElementById('white-pieces');
+    const whitePointsDiv = document.getElementById('white-points');
+    whitePiecesDiv.innerHTML = scoreBoard.w.pieces.map(piece => 
+        `<span style="display: inline-block; width: 24px; height: 24px; line-height: 24px; text-align: center;">${pieceSymbols[piece.name]}</span>`
+    ).join('');
+    whitePointsDiv.textContent = scoreBoard.w.points;
+    
+    // Update Black's scoreboard
+    const blackPiecesDiv = document.getElementById('black-pieces');
+    const blackPointsDiv = document.getElementById('black-points');
+    blackPiecesDiv.innerHTML = scoreBoard.b.pieces.map(piece => 
+        `<span style="display: inline-block; width: 24px; height: 24px; line-height: 24px; text-align: center;">${pieceSymbols[piece.name]}</span>`
+    ).join('');
+    blackPointsDiv.textContent = scoreBoard.b.points;
+}
 
 // 2) - Auxiliary functions 
 // -----------------------------------------------------------------------------
@@ -771,7 +812,6 @@ function logMove(from, to, piece) {
     
     moveLog.push(moveNotation);  
 }
-
 
 function timeMachineDo( time=0 ){
 
@@ -848,7 +888,6 @@ logMove = function(from, to, piece) {
     checkKingMateOrSteal();
 
     updatePGNTextArea();
-
 };
 
 
@@ -882,13 +921,19 @@ function checkKingMateOrSteal()
     console.log ( " King " + kingAttacked.checked + " pos: ( " + kingAttacked.row + "," + kingAttacked.col + ") ");
     console.log ( " Find " + allPlayerMoves.length + " Movements after check" );
 
+    let king_r = kingAttacked.row;
+    let king_c = kingAttacked.col;
+    if(isBoardFlipped){
+        king_r = 7 - king_r; king_c = 7 - king_c;
+    }
+
     // Evaluating what is happening:
 
     if ( kingAttacked.checked && allPlayerMoves.length == 0 ){
 
         // CHECK MATE - game over!!
         const container = document.getElementById('chess-board-container');
-        const square = container.querySelector(`.chess-square[data-row='${kingAttacked.row}'][data-col='${kingAttacked.col}']`);
+        const square = container.querySelector(`.chess-square[data-row='${king_r}'][data-col='${king_c}']`);
         square.className += " checkmate";
 
         kingAttacked.mated = true;
@@ -905,7 +950,7 @@ function checkKingMateOrSteal()
 
         // STEALMATE - game over!!! DRAW!!!
         const container = document.getElementById('chess-board-container');
-        const square = container.querySelector(`.chess-square[data-row='${kingAttacked.row}'][data-col='${kingAttacked.col}']`);
+        const square = container.querySelector(`.chess-square[data-row='${king_r}'][data-col='${king_c}']`);
         square.className += " stealmate";
 
         kingAttacked.stealmated = true;
@@ -922,7 +967,7 @@ function checkKingMateOrSteal()
 
         // CHECK! But game ON!!
         const container = document.getElementById('chess-board-container');
-        const square = container.querySelector(`.chess-square[data-row='${kingAttacked.row}'][data-col='${kingAttacked.col}']`);
+        const square = container.querySelector(`.chess-square[data-row='${king_r}'][data-col='${king_c}']`);
         square.className += " check";
 
         moveLog[ moveLog.length - 1 ] = moveLog[ moveLog.length-1 ] + "+";

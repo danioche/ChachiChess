@@ -113,5 +113,77 @@ document.addEventListener("keydown", function (e) {
     }
 })
 
+// Notification Systems
+// ---------------------------------------------------------
+
+const notificationContainer = document.getElementById('notification-container');
+
+/**
+ * Show a notification popup
+ * @param {string} title - The notification title
+ * @param {string} message - The notification message
+ * @param {string} image - The image URL (optional)
+ * @param {string} type - The notification type: 'success', 'warning', 'error', 'info' (default: 'info')
+ * @param {number} duration - How long to show notification in ms (0 = manual close only)
+ * @param {Array} actions - Array of action buttons: [{label: 'Button Text', callback: function, isSecondary: false}, ...]
+ */
+function showNotification(title, message, image = null, type = 'info', duration = 4000, actions = []) {
+    const notification = document.createElement('div');
+    notification.className = `notification-box ${type}`;
+    
+    // Build image HTML
+    const imageHTML = image ? `<div class="notification-image"><img src="${image}" alt="notification"></div>` : '';
+    
+    // Build actions HTML
+    let actionsHTML = '';
+    if (actions.length > 0) {
+        const actionButtons = actions.map((action, index) => {
+            const btnClass = action.isSecondary ? 'notification-btn secondary' : 'notification-btn';
+            return `<button class="${btnClass}" data-action="${index}">${action.label}</button>`;
+        }).join('');
+        actionsHTML = `<div class="notification-actions">${actionButtons}</div>`;
+    }
+    
+    notification.innerHTML = `
+        ${imageHTML}
+        <div class="notification-content">
+            <div class="notification-title">${title}</div>
+            <div class="notification-message">${message}</div>
+            ${actionsHTML}
+        </div>
+        <button class="notification-close">&times;</button>
+    `;
+    
+    notificationContainer.appendChild(notification);
+    
+    // Close button handler
+    const closeBtn = notification.querySelector('.notification-close');
+    closeBtn.onclick = () => removeNotification(notification);
+    
+    // Action button handlers
+    actions.forEach((action, index) => {
+        const btn = notification.querySelector(`[data-action="${index}"]`);
+        if (btn) {
+            btn.onclick = () => {
+                if (action.callback) action.callback();
+                removeNotification(notification);
+            };
+        }
+    });
+    
+    // Auto-close after duration
+    if (duration > 0) {
+        setTimeout(() => removeNotification(notification), duration);
+    }
+}
+
+function removeNotification(notification) {
+    notification.classList.add('notification-removing');
+    setTimeout(() => {
+        notification.remove();
+    }, 300);
+}
+
+
 // Initial PGN area fill
 updatePGNTextArea();

@@ -13,6 +13,9 @@ info = engine.analyse(board, chess.engine.Limit(depth=20))
 print("Score:", info["score"])
 # Score: PovScore(Mate(+1), WHITE)
 
+nextMove = engine.play( board, chess.engine.Limit(depth=20))
+print ("Move:", nextMove.move)
+
 # Check 
 # https://python-chess.readthedocs.io/en/v1.11.2/engine.html#playing
 

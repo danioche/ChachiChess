@@ -61,11 +61,14 @@ sideMenuToggle.onclick = () => {
     sideMenu.classList.toggle('open');
 };
 
+const now = new Date()
+const dateGame = now.getFullYear() + '.' + now.getMonth() + '.' + now.getDay();
 // PGN area update logic
 function updatePGNTextArea() {
-    let p1 = document.getElementById('player1-name').value || '?';
-    let p2 = document.getElementById('player2-name').value || '?';
-    let pgn = `[Event "?"]\n[Site "?"]\n[Date "????.??.??"]\n[Round "?"]\n[White "${p1}"]\n[Black "${p2}"]\n[Result "*"]\n\n`;
+    let p1 = document.getElementById('player1-name').value || 'White';
+    let p2 = document.getElementById('player2-name').value || 'Black';
+
+    let pgn = `[Event "Casual"]\n[Site "ChachiChessClub"]\n[Date "${dateGame}"]\n[Round "?"]\n[White "${p1}"]\n[Black "${p2}"]\n[Result "*"]\n\n`;
     let lastMoveVisible = moveLog.length;
     if (timeMachineStep>0) lastMoveVisible = timeMachineStep;
 
@@ -130,6 +133,10 @@ const notificationContainer = document.getElementById('notification-container');
 function showNotification(title, message, image = null, type = 'info', duration = 4000, actions = []) {
     const notification = document.createElement('div');
     notification.className = `notification-box ${type}`;
+    
+
+    // Play sound
+    playSound("a_notify");
     
     // Build image HTML
     const imageHTML = image ? `<div class="notification-image"><img src="${image}" alt="notification"></div>` : '';

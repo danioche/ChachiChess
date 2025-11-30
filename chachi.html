@@ -65,6 +65,7 @@
         <button id="restart-btn">⟳ Restart Game</button>
         <button id="flip-board-btn">↳↰ Flip Board</button>
         <button id="time-machine-btn"><img src="static/img/timeMachine.png">Time Machine</button>
+        <button id="next-move-btn" onclick = "javascript:nextMoveAsk()" >Next Move</button>
     </div>
 </div>
 <div class="chess-board-container" id="chess-board-container"></div>
@@ -210,8 +211,10 @@ function hidePromotionModal() {
 <div id="notification-container" style="position: fixed; bottom: 20px; right: 20px; z-index: 2100; display: flex; flex-direction: column; gap: 12px; max-width: 360px;">
 </div>
 
+<script src="static/js/sounds.js"></script>
 <script src="static/js/game.js"></script>
 <script src="static/js/ui.js"></script>
+
 <script>
 // Initial render with default size and boardArray
 renderChessBoard(64, boardArray);

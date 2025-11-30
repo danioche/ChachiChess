@@ -23,7 +23,7 @@ const fenToPieceName = {
     'k': 'bK', 'q': 'bQ', 'r': 'bR', 'b': 'bB', 'n': 'bN', 'p': 'bP'
 };
 
-// Different testing positions in FEN for debugging
+// Different testing/starting positions in FEN for debugging
 const startBoard = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 const nowsBlackTrun = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1";
 const onemovetocastle = "rnbqk2r/pppp1ppp/5n2/2b1p3/2B1PP2/5N2/PPPP2PP/RNBQK2R b - - 0 8";
@@ -59,6 +59,7 @@ let timeMachine = []; timeMachine.push( initialFEN ); let timeMachineStep = 0; /
 let kingAttacked = { color: 'w', checked: false, row: 0, col:0 }; 
 let scoreBoard = { w:{ points: 0, pieces: [] },
                    b:{ points: 0, pieces: [] } };
+let g_move_to_play = ""; // What should I play move, check, checkmate, draw...?
 
 // Board logic =================================================================
 
@@ -222,8 +223,12 @@ function renderChessBoard(squareSize = 64, boardArrayParam = null) {
                                           { name: boardArray[from.row][from.col].name, row: to.row, col: to.col });
                     }
                     
+                    g_move_to_play = "a_move";
                     // If to - dest is a piece this should be stored on the "score" of the current player
-                    if (boardArray[to.row][to.col]!=null) scorePiece( boardArray[to.row][to.col] );
+                    if (boardArray[to.row][to.col]!=null){
+                        scorePiece( boardArray[to.row][to.col] );
+                        g_move_to_play = "a_capture";
+                    } 
 
                     // Move piece in boardArray
                     boardArray[to.row][to.col] = boardArray[from.row][from.col];
@@ -265,12 +270,15 @@ function renderChessBoard(squareSize = 64, boardArrayParam = null) {
                                 }
                             }
                             boardArray[to.row][to.col].castling = castlingMove.castling; // King has moved log the castling type
+                        
+                            g_move_to_play = "a_castle";
                         }
                     }
 
 
                     draggedFrom = null;
                     renderChessBoard(squareSize, boardArray);
+                    
                     // Log the move
                     if (boardArray[to.row][to.col]) {
                         logMove(from, to, boardArray[to.row][to.col]); 
@@ -532,6 +540,9 @@ function promotionFinalle(piece,choose){
 
     // Now we should log the correct movement we should modify the Log
     moveLog[ moveLog.length - 1 ] = moveLog[ moveLog.length-1 ] + "=" + choose;
+
+    // Play final sound for promotion
+    playSound("a_promote");
 
     // And... we check again the status of the king
     checkKingMateOrSteal();
@@ -804,7 +815,9 @@ function logMove(from, to, piece) {
     const fromSquare = files[from.col] + ranks[7 - from.row];
     const toSquare = files[to.col] + ranks[7 - to.row];
     const pieceNotation = piece.name[1]; // 'K', 'Q', 'R', 'B', 'N', 'P'
-    let moveNotation = (pieceNotation === 'P' ? '' : pieceNotation + fromSquare ) + toSquare;
+    let capture = ( g_move_to_play == "a_capture" )? "x" : "";
+
+    let moveNotation = (pieceNotation === 'P' ? '' : pieceNotation + fromSquare ) + capture + toSquare;
     // Pawn capturing notation (same for en-passant)
     if (piece.name[1]==='P' && from.col != to.col ){ moveNotation = fromSquare[0] + 'x' + toSquare; };
     // Castling notation
@@ -888,6 +901,8 @@ logMove = function(from, to, piece) {
     checkKingMateOrSteal();
 
     updatePGNTextArea();
+
+    playSound( g_move_to_play );
 };
 
 
@@ -972,6 +987,9 @@ function checkKingMateOrSteal()
 
         moveLog[ moveLog.length - 1 ] = moveLog[ moveLog.length-1 ] + "+";
 
+        // Update sound
+        g_move_to_play = "a_check";
+
         return kingAttacked;
     }
 
@@ -1038,3 +1056,27 @@ function currentTurn() {
     return  whosMoving%2===0  ? 'w': 'b';
 }
 
+// Next move TEST 
+async function nextMoveAsk(){
+
+    
+    fenToSend = boardArrayToFEN(boardArray);
+
+    url = "http://127.0.0.1:5000/move?fen="+fenToSend;
+
+    console.log("URL : " + url);
+
+    try {
+        const response = await fetch(url);
+        if (!response.ok) {
+        throw new Error(`Response status: ${response.status}`);
+        }
+
+        const result = await response.text();
+        console.log(result);
+    } catch (error) {
+        console.error(error.message);
+    }
+}
+
+// Button 

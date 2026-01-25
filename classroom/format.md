@@ -37,6 +37,10 @@ The Teacher is speaking to the user.
 
 Tips, a list of tips normally exposing options and opportunities on the current board set.
 
+- move_list:
+
+This is a list with cases that are the movements after players move. Once the player has move the system will check with every case comparing the game play PGN and the expected PGN and the teacher will respond with the prompt indicated just after the PGN.
+
 ## 
 
 ### StartingPosition
@@ -46,9 +50,5 @@ Interaction with the engine.
 This will let the engine know which board should be setted. If not declared the board will be a standard one with starting whites.
 
 ### 
-
-# TODO
-
-- Add bibliography and credits section 
 
 

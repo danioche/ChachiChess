@@ -129,8 +129,13 @@
                 chatMessages.appendChild(div);
                 chatMessages.scrollTop = chatMessages.scrollHeight;
                 chatInput.value = '';
+
+                // We interact with bot
+                alert( readChat(msg) );
             }
         };
+
+
         </script>
     </div>
 </div>
@@ -213,6 +218,7 @@ function hidePromotionModal() {
 
 <script src="static/js/sounds.js"></script>
 <script src="static/js/game.js"></script>
+<script src="static/js/bot.js"></script>
 <script src="static/js/ui.js"></script>
 
 <script>

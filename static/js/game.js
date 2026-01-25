@@ -170,6 +170,8 @@ function renderChessBoard(squareSize = 64, boardArrayParam = null) {
         // Squares
         for (let col = 0; col < 8; col++) {
             const square = document.createElement('div');
+            if(isBoardFlipped) square.id = files[7-col]+(boardRowIdx+1);
+            else square.id = files[col]+(8-boardRowIdx);
             square.className = 'chess-square ' + ((row + col) % 2 === 0 ? 'white' : 'black') + " grabbing";
             square.dataset.row = boardRowIdx;
             square.dataset.col = col;
@@ -184,108 +186,7 @@ function renderChessBoard(squareSize = 64, boardArrayParam = null) {
             square.addEventListener('drop', function(e) {
                 e.preventDefault();
 
-                console.log( "Moves available pending to confirm: " + allowedMovesPendingToConfirm.length );
-
-                if (allowedMovesPendingToConfirm.length==0) return;
-
-                // if board is flipped, we need to adjust/transpose the row and col movement to match the actual boardArray
-                if (isBoardFlipped){
-                    square.dataset.row = 7 - parseInt(square.dataset.row);
-                    square.dataset.col = 7 - parseInt(square.dataset.col);
-                    console.log("After flip:", square.dataset.row, square.dataset.col);
-                    draggedFrom = { row: 7 - draggedFrom.row, col: 7 - draggedFrom.col};
-                }
-
-                // Check first if the move is allowed
-                if (allowedMovesPendingToConfirm.length > 0) {
-                    const to = { row: parseInt(square.dataset.row), col: parseInt(square.dataset.col) };
-                    const isAllowed = allowedMovesPendingToConfirm.some(m => m.row === to.row && m.col === to.col);
-                    if (!isAllowed) {
-                        // Invalid move, ignore
-                        clearAllowedMoves();
-                        return;
-                    }   
-                } 
-
-                const from = draggedFrom;
-                const to = { row: parseInt(square.dataset.row), col: parseInt(square.dataset.col) };
-                
-                if (from && (from.row !== to.row || from.col !== to.col)) {
-
-                    // Check Pawns to promote
-                    if(
-                        (boardArray[from.row][from.col].name[1]==='P' && boardArray[from.row][from.col].name[0] ==='w' && to.row === 0 ) || 
-                        (boardArray[from.row][from.col].name[1]==='P' && boardArray[from.row][from.col].name[0] ==='b' && to.row === 7 )
-                    )  
-                    {
-                        showPromotionModal(e, 
-                                          /* Piece generation on the fly */ 
-                                          { name: boardArray[from.row][from.col].name, row: to.row, col: to.col });
-                    }
-                    
-                    g_move_to_play = "a_move";
-                    // If to - dest is a piece this should be stored on the "score" of the current player
-                    if (boardArray[to.row][to.col]!=null){
-                        scorePiece( boardArray[to.row][to.col] );
-                        g_move_to_play = "a_capture";
-                    } 
-
-                    // Move piece in boardArray
-                    boardArray[to.row][to.col] = boardArray[from.row][from.col];
-                    boardArray[from.row][from.col] = null;
-                    
-                    // If it's an en-passant move we should remove the pawn captured from the board
-                    if( allowedMovesPendingToConfirm.find(m => m.row === to.row && m.col === to.col && m.enpassant) ){
-                        // Depending on direction (white or black) we will remove one or other square
-                        if(boardArray[to.row][to.col].name[0] === 'w') boardArray[to.row+1][to.col] = null;
-                        else boardArray[to.row-1][to.col] = null;
-                    }
-
-                    // If is a castling move, move the rook too - It's a Kinkg doing a move
-                    let castlingMove = null;
-                    if (boardArray[to.row][to.col] && boardArray[to.row][to.col].name[1] === 'K') {
-                        // Kinkg can castle, no matter if white or black
-                        castlingMove = allowedMovesPendingToConfirm.find(m => m.row === to.row && m.col === to.col && m.castling);
-                        if (castlingMove) {
-                            // Now have to check if is white or black
-                            if(boardArray[to.row][to.col].name[0] === 'w'){
-                                if (castlingMove.castling === 'K') {
-                                    // Kingside
-                                    boardArray[to.row][to.col - 1] = boardArray[to.row][7];
-                                    boardArray[to.row][7] = null;
-                                } else if (castlingMove.castling === 'Q') {
-                                    // Queenside
-                                    boardArray[to.row][to.col + 1] = boardArray[to.row][0];
-                                    boardArray[to.row][0] = null;
-                                }
-                            } else { // black
-                                if (castlingMove.castling === 'K') {
-                                    // Kingside
-                                    boardArray[to.row][to.col - 1] = boardArray[to.row][7];
-                                    boardArray[to.row][7] = null;
-                                } else if (castlingMove.castling === 'Q') {
-                                    // Queenside
-                                    boardArray[to.row][to.col + 1] = boardArray[to.row][0];
-                                    boardArray[to.row][0] = null;
-                                }
-                            }
-                            boardArray[to.row][to.col].castling = castlingMove.castling; // King has moved log the castling type
-                        
-                            g_move_to_play = "a_castle";
-                        }
-                    }
-
-
-                    draggedFrom = null;
-                    renderChessBoard(squareSize, boardArray);
-                    
-                    // Log the move
-                    if (boardArray[to.row][to.col]) {
-                        logMove(from, to, boardArray[to.row][to.col]); 
-                    }
-                    // No pending moves, reset.
-                    allowedMovesPendingToConfirm = [];
-                }
+                return performMove(square, squareSize, e);
             });
 
             // Touch support for drop
@@ -325,7 +226,6 @@ function renderChessBoard(squareSize = 64, boardArrayParam = null) {
                     draggedFrom = { row: boardRowIdx, col: col };
                     
                     movePiece(piece, draggedFrom);
-
                 });
 
                 // Touch support for drag
@@ -384,11 +284,120 @@ function renderChessBoard(squareSize = 64, boardArrayParam = null) {
     updateScoreboard();
 }
 
+// Needs the info from the "target" square
+function performMove(square,squareSize,e){
+
+    // console.log( "Moves available pending to confirm: " + allowedMovesPendingToConfirm.length );
+
+    if (allowedMovesPendingToConfirm.length==0) return;
+
+    // if board is flipped, we need to adjust/transpose the row and col movement to match the actual boardArray
+    if (isBoardFlipped){
+        square.dataset.row = 7 - parseInt(square.dataset.row);
+        square.dataset.col = 7 - parseInt(square.dataset.col);
+        // console.log("After flip:", square.dataset.row, square.dataset.col);
+        draggedFrom = { row: 7 - draggedFrom.row, col: 7 - draggedFrom.col};
+    }
+
+    // Check first if the move is allowed
+    if (allowedMovesPendingToConfirm.length > 0) {
+        const to = { row: parseInt(square.dataset.row), col: parseInt(square.dataset.col) };
+        const isAllowed = allowedMovesPendingToConfirm.some(m => m.row === to.row && m.col === to.col);
+        if (!isAllowed) {
+            // Invalid move, ignore
+            clearAllowedMoves();
+            return;
+        }   
+    } 
+
+    const from = draggedFrom;
+    const to = { row: parseInt(square.dataset.row), col: parseInt(square.dataset.col) };
+    
+    if (from && (from.row !== to.row || from.col !== to.col)) {
+
+        // Check Pawns to promote
+        if(
+            (boardArray[from.row][from.col].name[1]==='P' && boardArray[from.row][from.col].name[0] ==='w' && to.row === 0 ) || 
+            (boardArray[from.row][from.col].name[1]==='P' && boardArray[from.row][from.col].name[0] ==='b' && to.row === 7 )
+        )  
+        {
+            showPromotionModal(e, 
+                                /* Piece generation on the fly */ 
+                                { name: boardArray[from.row][from.col].name, row: to.row, col: to.col });
+        }
+        
+        g_move_to_play = "a_move";
+        // If to - dest is a piece this should be stored on the "score" of the current player
+        if (boardArray[to.row][to.col]!=null){
+            scorePiece( boardArray[to.row][to.col] );
+            g_move_to_play = "a_capture";
+        } 
+
+        // Move piece in boardArray
+        boardArray[to.row][to.col] = boardArray[from.row][from.col];
+        boardArray[from.row][from.col] = null;
+        
+        // If it's an en-passant move we should remove the pawn captured from the board
+        if( allowedMovesPendingToConfirm.find(m => m.row === to.row && m.col === to.col && m.enpassant) ){
+            // Depending on direction (white or black) we will remove one or other square
+            if(boardArray[to.row][to.col].name[0] === 'w') boardArray[to.row+1][to.col] = null;
+            else boardArray[to.row-1][to.col] = null;
+        }
+
+        // If is a castling move, move the rook too - It's a Kinkg doing a move
+        let castlingMove = null;
+        if (boardArray[to.row][to.col] && boardArray[to.row][to.col].name[1] === 'K') {
+            // Kinkg can castle, no matter if white or black
+            castlingMove = allowedMovesPendingToConfirm.find(m => m.row === to.row && m.col === to.col && m.castling);
+            if (castlingMove) {
+                // Now have to check if is white or black
+                if(boardArray[to.row][to.col].name[0] === 'w'){
+                    if (castlingMove.castling === 'K') {
+                        // Kingside
+                        boardArray[to.row][to.col - 1] = boardArray[to.row][7];
+                        boardArray[to.row][7] = null;
+                    } else if (castlingMove.castling === 'Q') {
+                        // Queenside
+                        boardArray[to.row][to.col + 1] = boardArray[to.row][0];
+                        boardArray[to.row][0] = null;
+                    }
+                } else { // black
+                    if (castlingMove.castling === 'K') {
+                        // Kingside
+                        boardArray[to.row][to.col - 1] = boardArray[to.row][7];
+                        boardArray[to.row][7] = null;
+                    } else if (castlingMove.castling === 'Q') {
+                        // Queenside
+                        boardArray[to.row][to.col + 1] = boardArray[to.row][0];
+                        boardArray[to.row][0] = null;
+                    }
+                }
+                boardArray[to.row][to.col].castling = castlingMove.castling; // King has moved log the castling type
+            
+                g_move_to_play = "a_castle";
+            }
+        }
+
+
+        draggedFrom = null;
+        renderChessBoard(squareSize, boardArray);
+        
+        // Log the move
+        if (boardArray[to.row][to.col]) {
+            logMove(from, to, boardArray[to.row][to.col]); 
+        }
+        // No pending moves, reset.
+        allowedMovesPendingToConfirm = [];
+    }
+
+}
+
+
 // CORE: Main movement function 
 function movePiece(piece, position) {
 
     if(piece.name[0] != currentTurn()){
-        console.log("Not your turn to move");
+        // console.log("Not your turn to move");
         return;
     } 
 
@@ -932,9 +941,9 @@ function checkKingMateOrSteal()
         }
     }
 
-    console.log ( " Player: " + player );
-    console.log ( " King " + kingAttacked.checked + " pos: ( " + kingAttacked.row + "," + kingAttacked.col + ") ");
-    console.log ( " Find " + allPlayerMoves.length + " Movements after check" );
+    // console.log ( " Player: " + player );
+    // console.log ( " King " + kingAttacked.checked + " pos: ( " + kingAttacked.row + "," + kingAttacked.col + ") ");
+    // console.log ( " Find " + allPlayerMoves.length + " Movements after check" );
 
     let king_r = kingAttacked.row;
     let king_c = kingAttacked.col;
@@ -1058,13 +1067,10 @@ function currentTurn() {
 
 // Next move TEST 
 async function nextMoveAsk(){
-
     
     fenToSend = boardArrayToFEN(boardArray);
-
-    url = "http://127.0.0.1:5000/move?fen="+fenToSend;
-
-    console.log("URL : " + url);
+    
+    url = window.location + "/move?fen="+fenToSend;
 
     try {
         const response = await fetch(url);
@@ -1074,9 +1080,31 @@ async function nextMoveAsk(){
 
         const result = await response.text();
         console.log(result);
+
+        // Parse UCI move (e.g., "e2e4")
+        const uciMove = result.trim();
+        let fromCol = uciMove.charCodeAt(0) - 'a'.charCodeAt(0);
+        let fromRow = 8 - parseInt(uciMove[1]);
+        let toCol = uciMove.charCodeAt(2) - 'a'.charCodeAt(0);
+        let toRow = 8 - parseInt(uciMove[3]);
+
+        // Get the piece and perform the move
+        const piece = boardArray[fromRow][fromCol];
+        if (piece) {
+            // console.log("Piece: "+ piece.name + " from: "+ fromRow +","+ fromCol + " to: "+ toRow + ","+ toCol + " targetId: "+ uciMove.substring(2));
+            if (isBoardFlipped) draggedFrom = { row: 7-fromRow, col: 7-fromCol };
+            else draggedFrom = { row: fromRow, col: fromCol };
+
+            const targetSquare = document.getElementById(uciMove.substring(2));
+            if (targetSquare) {
+                allowedMovesPendingToConfirm = allowedMoves({row:fromRow,col:fromCol}, piece);
+                performMove(targetSquare, boardSize, targetSquare);
+            }
+        }
+
     } catch (error) {
         console.error(error.message);
     }
-}
+  
 
-// Button 
+}

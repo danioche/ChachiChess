@@ -52,7 +52,7 @@
     color: #444;
 }
 #side-menu input[type="text"] {
-    width: 100%;
+    width: 90%;
     padding: 6px 8px;
     margin-bottom: 8px;
     border: 1px solid #bbb;
@@ -60,7 +60,7 @@
     font-size: 1em;
 }
 #side-menu textarea {
-    width: 100%;
+    width: 90%;
     min-height: 110px;
     resize: vertical;
     font-family: monospace;

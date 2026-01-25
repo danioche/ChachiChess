@@ -37,8 +37,6 @@ This is a new type of file that uses some inspiration: based in FEN and PGN to k
 
 Documentation: See /classroom/format.md
 
-
-
 ## Credits
 
 - Chess piece images: [Your source or credits here]
@@ -53,19 +51,18 @@ All rights to @danioche
 Currently working on:
 
 - Initial version of chat 
-- Engine integrated at backend level, pending to integrate with FE/UI
-- Lessons and Teacher interaction
+- Engine integrated at backend level, integrated with FE/UI
+- Lessons and Teacher interaction ( https://docs.chatterbot.us/training/#training )
 
 List of known bugs to work on:
 
-- Flip board should be checked for checks and for Queen and King position, it is wrong!!
 - Sometimes random allowed movements outside the board. Nice :D 
 
 List of things that I will love to add:
 
 - Lessons and Teacher interaction
-- Play against bot 
+- Play against bot (mostly done)
 - Multi-language support
-- Conversations during the game with teachers and avatars
-- Interactivity online and offline
+- Conversations during the game with teachers and avatars 
+- Interactivity online and offline 
 

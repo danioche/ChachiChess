@@ -24,6 +24,7 @@ def serve_image(filename):
 def move():
     fenPos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
+    # TODO: This should be a param or an environment variable (second option best)
     engine = chess.engine.SimpleEngine.popen_uci("C:\\Users\\danie\\devel\\bin\\stockfish")
     
     if request.method == 'GET':

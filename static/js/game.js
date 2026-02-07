@@ -78,10 +78,11 @@ function resetGame(){
     isBoardFlipped = false;
     moveLog.length = 0;
     scoreBoard = { w:{ points: 0, pieces: [] }, b:{ points: 0, pieces: [] } };
+    timeMachine = []; timeMachine.push( initialFEN ); timeMachineStep = 0;
     renderChessBoard(boardSize, boardArray);
     updatePGNTextArea();
     updateScoreboard();
-    timeMachine = []; timeMachine.push( initialFEN ); timeMachineStep = 0;
+    updateClocksIcos();    
 }
 
 function fenToBoardArray(fen) {

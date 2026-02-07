@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="static/css/board.css">
+    <link rel="stylesheet" href="static/css/board-top.css">
     <link rel="stylesheet" href="static/css/menu.css">
     <link rel="stylesheet" href="static/css/chat.css">
 </head>
@@ -15,34 +16,40 @@
 <button id="side-menu-toggle" title="Menu">&#9776;</button>
 <div id="scoreboards-container" style="display: flex; gap: 12px; justify-content: center; padding: 12px 0; background: #f7f7fa; border-bottom: 1px solid #e0e0e0;">
     <!-- White Player Scoreboard -->
-    <div id="scoreboard-white" style="background: white; border-radius: 8px; padding: 12px 16px; border: 2px solid #d4af37; min-width: 200px; text-align: center;">
-        <div style="font-weight: 600; font-size: 0.95em; color: #333; margin-bottom: 8px;">White's Capture</div>
-        <div style="display: flex; align-items: center; justify-content: center; gap: 12px;">
+    <div id="scoreboard-white">
+        <div class="scoreboard-title">White's Capture</div>
+        <div class="scoreboard-lefbox">
             <div style="flex: 1;">
-                <div id="white-pieces" style="font-size: 1.2em; line-height: 1.4; min-height: 40px; display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; align-items: center;">
+                <div id="white-pieces">
                     <!-- Captured pieces will appear here -->
                 </div>
             </div>
-            <div style="text-align: center; padding-left: 12px; border-left: 2px solid #e0e0e0;">
+            <div class="scoreTitle">
                 <div style="font-size: 0.85em; color: #666;">Points</div>
                 <div id="white-points" style="font-size: 1.8em; font-weight: bold; color: #d4af37;">0</div>
             </div>
         </div>
+        <div id="clock-white-container" style="display: flex; align-items: center; justify-content: center; gap: 12px;">
+            <div id="clock-white">⏱</div><input type="text" readonly id="whiteTimer" style="background: white;" value="00:00.00">
+        </div>
     </div>
     
     <!-- Black Player Scoreboard -->
-    <div id="scoreboard-black" style="background: white; border-radius: 8px; padding: 12px 16px; border: 2px solid #333; min-width: 200px; text-align: center;">
-        <div style="font-weight: 600; font-size: 0.95em; color: #333; margin-bottom: 8px;">Black's Capture</div>
-        <div style="display: flex; align-items: center; justify-content: center; gap: 12px;">
+    <div id="scoreboard-black">
+        <div class="scoreboard-title">Black's Capture</div>
+        <div class="scoreboard-lefbox">
             <div style="flex: 1;">
-                <div id="black-pieces" style="font-size: 1.2em; line-height: 1.4; min-height: 40px; display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; align-items: center;">
+                <div id="black-pieces">
                     <!-- Captured pieces will appear here -->
                 </div>
             </div>
-            <div style="text-align: center; padding-left: 12px; border-left: 2px solid #e0e0e0;">
+            <div class="scoreTitle">
                 <div style="font-size: 0.85em; color: #666;">Points</div>
                 <div id="black-points" style="font-size: 1.8em; font-weight: bold; color: #333;">0</div>
             </div>
+        </div>
+        <div id="clock-black-container" style="display: flex; align-items: center; justify-content: center; gap: 12px;">
+            <div id="clock-black">⏱</div><input type="text" readonly id="blackTimer" style="background: white;" value="00:00.00">
         </div>
     </div>
 </div>
@@ -51,11 +58,11 @@
     <div id="side-menu-content">
         <div>
             <label for="player1-name">White's Player:</label>
-            <input type="text" id="player1-name" placeholder="White" autocomplete="off">
+            <input type="text" id="player1-name" placeholder="White" autocomplete="off" value="White">
         </div>
         <div>
             <label for="player2-name">Black's Player:</label>
-            <input type="text" id="player2-name" placeholder="Black" autocomplete="off">
+            <input type="text" id="player2-name" placeholder="Black" autocomplete="off" value="Black">
         </div>
         <div>
             <label for="pgn-area">PGN Notation:</label>
@@ -64,6 +71,7 @@
         <button id="fen-btn">💾 Get FEN</button>
         <button id="restart-btn">⟳ Restart Game</button>
         <button id="flip-board-btn">↳↰ Flip Board</button>
+        <button id="clock-btn">⏱️ Clock</button>
         <button id="time-machine-btn"><img src="static/img/timeMachine.png">Time Machine</button>
         <button id="next-move-btn" onclick = "javascript:nextMoveAsk()" >Next Move</button>
     </div>
@@ -108,7 +116,7 @@
             <div id="chat-messages" style="flex:1; padding:10px; overflow-y:auto; font-size:0.98em;"></div>
             <form id="chat-form" style="display:flex; border-top:1px solid #e0e0e0;">
                 <input type="text" id="chat-input" placeholder="Type a message..." autocomplete="off" style="flex:1; border:none; padding:10px; font-size:1em; outline:none;">
-                <button type="submit" style="background:#4a90e2; color:#fff; border:none; padding:0 18px; font-size:1em; cursor:pointer;">Send</button>
+                <button type="submit" style="background:#4a90e2; color:#fff; border:none; padding:0 10px; font-size:1em; cursor:pointer;" alt="Send" tooltip="Send">⌯⌲</button>
             </form>
         </div>
         <script>
@@ -116,6 +124,34 @@
         const chatForm = document.getElementById('chat-form');
         const chatInput = document.getElementById('chat-input');
 
+
+        async function getBotResponse( lmsg ){
+
+            return ( botSpeaks( readChat(lmsg) ) );
+
+        }
+
+        function addBotMesage( lmsg ){
+            const msg = lmsg+"";
+            if (msg) {
+                const div = document.createElement('div');
+                div.innerHTML = msg;
+                div.style.margin = '6px 0';
+                div.style.padding = '6px 10px';
+                div.style.textAlign = 'right';
+                div.style.background = '#f1ffff';
+                div.style.borderRadius = '5px';
+                chatMessages.appendChild(div);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+        }
+
+        // This is the function that runs the chat - TODO: Probably this can be modularized more structured
+
+        // A new message msg has been sent to the chat 
+        //   - Send
+        //   - Analyze by the Bot
+        //   - Answer 
         chatForm.onsubmit = function(e) {
             e.preventDefault();
             const msg = chatInput.value.trim();
@@ -131,7 +167,9 @@
                 chatInput.value = '';
 
                 // We interact with bot
-                alert( readChat(msg) );
+                // The best here is to include a promise call (chat can spend time)
+                getBotResponse(msg).then( addBotMesage );
+                
             }
         };
 
@@ -220,10 +258,12 @@ function hidePromotionModal() {
 <script src="static/js/game.js"></script>
 <script src="static/js/bot.js"></script>
 <script src="static/js/ui.js"></script>
+<script src="static/js/clock.js"></script>
 
 <script>
 // Initial render with default size and boardArray
 renderChessBoard(64, boardArray);
+updateClocksIcos();
 showNotification(
     'Hola!',
     'Bienvenid@ a ChachiChess!',

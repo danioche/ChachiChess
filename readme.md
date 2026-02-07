@@ -10,6 +10,9 @@ ChachiChess is a simple, interactive chessboard web application. It displays a c
 - Loads chess positions from FEN strings
 - Displays chess pieces using configurable image themes
 - Drag-and-drop interface for moving pieces
+- Sounds added 
+- Time Machine to check your movements
+- Engine integrated at backend level, integrated with FE/UI
 
 ## Usage
 
@@ -22,6 +25,12 @@ ChachiChess is a simple, interactive chessboard web application. It displays a c
 - Change the initial position by editing the FEN string in the JavaScript (`initialFEN`).
 - Change the piece images by modifying the `actualThemePath` variable.
 - Adjust the board square size by calling `setChessBoardSize(size)` from the browser console.
+
+## Engine Dependency
+
+Bots can play with you using an external engine, in this project the engine that you should have is stockfish engine.
+TODO: Update here the version, path and how to test/configure for the project.
+
 
 ## Project Structure
 
@@ -51,7 +60,6 @@ All rights to @danioche
 Currently working on:
 
 - Initial version of chat 
-- Engine integrated at backend level, integrated with FE/UI
 - Lessons and Teacher interaction ( https://docs.chatterbot.us/training/#training )
 
 List of known bugs to work on:
@@ -64,5 +72,8 @@ List of things that I will love to add:
 - Play against bot (mostly done)
 - Multi-language support
 - Conversations during the game with teachers and avatars 
-- Interactivity online and offline 
+- Interactivity/Interoperativity online and offline 
+    - PGN / FEN export to file
+- Analysis (arrows, highlight on squares and more)
+- BD creation 
 

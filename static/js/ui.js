@@ -18,6 +18,9 @@ document.getElementById('modal-dialog').onclick = function(e) {
 
 // Win popup logic
 function showWinPopup(winner, reason) {
+
+        clearInterval( clockInterval );
+
         const p1 = document.getElementById('player1-name').value || '?';
         const p2 = document.getElementById('player2-name').value || '?';
         const winnerName = winner === 'White' ? p1 : (winner === 'Black' ? p2 : 'Both Players');
@@ -77,8 +80,9 @@ function updatePGNTextArea() {
         pgn += moveLog[i] + " ";
     }
 
-    if( lastMoveVisible==0 ) pgn += "*";
-    if( lastMoveVisible > 0 && moveLog[lastMoveVisible-1].indexOf("#") <=0 &&  moveLog[lastMoveVisible-1].indexOf("1/2-1/2")<=0 ) pgn += "*";
+    if( lastMoveVisible==0 || !lastMoveVisible ) pgn += "*";
+    else
+        if( moveLog[lastMoveVisible-1].indexOf("#") <=0 &&  moveLog[lastMoveVisible-1].indexOf("1/2-1/2")<=0 ) pgn += "*";
 
 
     document.getElementById('pgn-area').value = pgn;

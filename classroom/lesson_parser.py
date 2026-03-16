@@ -27,6 +27,7 @@ class Lesson:
         self.teacher_text: str = ''
         self.tips: List[str] = []
         self.move_cases: List[Dict] = []
+        self.nok_chats: List[str] = []
 
     @classmethod
     def from_file(cls, path: str) -> 'Lesson':
@@ -113,10 +114,18 @@ class Lesson:
                 case_id += 1
                 lesson.move_cases.append({
                     'id': case_id,
-                    'raw': p,
+                    # 'raw': p,
                     'pgn': pgn,
                     'teacher': teacher_answer
                 })
+
+
+        raw_nok_chats = lesson.blocks.get('nok_chats', '')
+        if raw_nok_chats:
+            nok_chats = [l.strip() for l in raw_nok_chats.splitlines() if l.strip()]
+            # remove leading list markers
+            lesson.nok_chats = [re.sub(r'^[-\*\+\s]*', '', t) for t in nok_chats]
+
 
         return lesson
 
@@ -126,7 +135,8 @@ class Lesson:
             'teacher': self.teacher_text,
             'tips': list(self.tips),
             'move_cases': list(self.move_cases),
-            'blocks': dict(self.blocks)
+            'nok_chats' : list(self.nok_chats)
+            # , 'blocks': dict(self.blocks)
         }
 
 

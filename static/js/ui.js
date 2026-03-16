@@ -72,19 +72,22 @@ function updatePGNTextArea() {
     let p2 = document.getElementById('player2-name').value || 'Black';
 
     let pgn = `[Event "Casual"]\n[Site "ChachiChessClub"]\n[Date "${dateGame}"]\n[Round "?"]\n[White "${p1}"]\n[Black "${p2}"]\n[Result "*"]\n\n`;
+    let pgn_moves = '';
     let lastMoveVisible = moveLog.length;
     if (timeMachineStep>0) lastMoveVisible = timeMachineStep;
 
     for (let i = 0; i < lastMoveVisible; i++) {
-        if (i % 2 === 0) pgn += ((i / 2) + 1) + ". ";
+        if (i % 2 === 0){ indexMove = ((i / 2) + 1) + ". "; pgn += indexMove; pgn_moves += indexMove }
         pgn += moveLog[i] + " ";
+        pgn_moves += moveLog[i] + " ";
     }
 
-    if( lastMoveVisible==0 || !lastMoveVisible ) pgn += "*";
+    if( lastMoveVisible==0 || !lastMoveVisible ){ pgn += "*"; pgn_moves +="*"; }
     else
-        if( moveLog[lastMoveVisible-1].indexOf("#") <=0 &&  moveLog[lastMoveVisible-1].indexOf("1/2-1/2")<=0 ) pgn += "*";
+        if( moveLog[lastMoveVisible-1].indexOf("#") <=0 &&  moveLog[lastMoveVisible-1].indexOf("1/2-1/2")<=0 ){ pgn += "*"; pgn_moves += "*" }
 
 
+    document.getElementById('pgn-area-moves').value = pgn_moves;
     document.getElementById('pgn-area').value = pgn;
 }
 

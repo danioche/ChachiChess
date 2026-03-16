@@ -85,6 +85,25 @@ function resetGame(){
     updateClocksIcos();    
 }
 
+function resetGamewFEN( lFEN ){
+    boardArray = fenToBoardArray(lFEN);
+    draggedFrom = null;
+    castlingRights = { wK: true, wQ: true, bK: true, bQ: true };
+    castlingString = lFEN.split(" ")[2];
+    enPassantTarget = lFEN.split(" ")[3];
+    halfmoveClock = lFEN.split(" ")[4];
+    fullmoveNumber = lFEN.split(" ")[5];
+    whosMoving = lFEN.split(" ")[1] === 'w' ? 0:1; // 0 Whites
+    isBoardFlipped = false;
+    moveLog.length = 0;
+    scoreBoard = { w:{ points: 0, pieces: [] }, b:{ points: 0, pieces: [] } };
+    timeMachine = []; timeMachine.push( lFEN ); timeMachineStep = 0;
+    renderChessBoard(boardSize, boardArray);
+    updatePGNTextArea();
+    updateScoreboard();
+    updateClocksIcos();
+}
+
 function fenToBoardArray(fen) {
     // Only use the first field (piece placement)
     const rows = fen.split(' ')[0].split('/');
@@ -1108,4 +1127,86 @@ async function nextMoveAsk(){
     }
   
 
+}
+
+
+// Lesson integration - Game engine injected with a lesson
+
+// Note: 
+// The below is dependent on logMove, this code needs to be interpreted
+// once logMove is on memory with all the stuff!
+
+const pre_lesson_logMove = logMove;
+let lesson_allowed_moves = []; 
+let lesson_tips = [];
+let lesson_nok_chats = [];
+async function lessonWorker(){
+
+    pgn = document.getElementById( "pgn-area" ).value;
+    url = window.location + "/lesson?pgn="+pgn;
+
+    try {
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`Response status: ${response.status}`);
+        }
+
+        result = await response.text();
+        
+        obj_Lesson = JSON.parse(result);
+
+        console.log( obj_Lesson.metadata.StartingPosition );
+  
+    } catch (error) {
+        console.error( "Error en lessonWorker:"+ error.message );
+    }
+
+    // First lest load de new starting position for the lesson
+    resetGamewFEN( obj_Lesson.metadata.StartingPosition );
+
+    // Intro for the lesson
+    intro = "This is the <b>" + obj_Lesson.metadata.Title + "</b> lesson by " + obj_Lesson.metadata.Author + "." +
+            " " + obj_Lesson.metadata.Description + "<br>" + 
+            " Let's go!";
+            
+    addBotMesage ( intro );
+
+    // Load the lesson moves on the global array / bufffer
+    // Not a reference, a copy of the values
+    let lesson_allowed_moves =  JSON.parse(JSON.stringify( obj_Lesson.move_cases ));
+    let lesson_tips = JSON.parse(JSON.stringify( obj_Lesson.tips ));
+    let lesson_nok_chats = JSON.parse(JSON.stringify( obj_Lesson.nok_chats ));
+
+    // Injection for logMove! 
+    // I need to hack logMove function to check if the movement is right
+
+    logMove = function( from, to, piece ){
+
+        // After the user moves we will update every thing
+        pre_lesson_logMove(from, to, piece);
+
+        // But the move could be "wrong" according to the lesson if so
+        // we should go back!...and undo the move! Thanks to the time-travel machine!
+        document.getElementById('chess-board-timeMachine').style.display = "block";
+
+        // Current PGN on the board
+        currentPGN = document.getElementById('pgn-area-moves').value;
+
+        // Lets see all the moves and chat with the user
+        its_a_move = false;
+        for( i=0; i<lesson_allowed_moves.length; i++ ){
+
+            if( currentPGN.trim() == lesson_allowed_moves[i].pgn.trim() ){
+
+                addBotMesage( lesson_allowed_moves[i].teacher+"" );
+                its_a_move = true;
+            }
+        }
+
+        if (!its_a_move){
+            addBotMesage( lesson_nok_chats[0] );
+            addBotMesage( lesson_tips[0] );
+        }
+        
+    }
 }

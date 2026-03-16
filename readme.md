@@ -13,6 +13,7 @@ ChachiChess is a simple, interactive chessboard web application. It displays a c
 - Sounds added 
 - Time Machine to check your movements
 - Engine integrated at backend level, integrated with FE/UI
+- Chess Clock added (basic)
 
 ## Usage
 
@@ -60,7 +61,8 @@ All rights to @danioche
 Currently working on:
 
 - Initial version of chat 
-- Lessons and Teacher interaction ( https://docs.chatterbot.us/training/#training )
+- Lessons and Teacher interaction
+
 
 List of known bugs to work on:
 
@@ -70,6 +72,7 @@ List of things that I will love to add:
 
 - Lessons and Teacher interaction
 - Play against bot (mostly done)
+- Bot improvements ( https://docs.chatterbot.us/training/#training )
 - Multi-language support
 - Conversations during the game with teachers and avatars 
 - Interactivity/Interoperativity online and offline 
@@ -77,3 +80,41 @@ List of things that I will love to add:
 - Analysis (arrows, highlight on squares and more)
 - BD creation 
 
+# Ideas for future implementations
+
+# Patrick - Bob Squarepants Teachers
+
+Story:
+- Very dummy teachers that moves randomly 
+- A fun version of a not a teacher :D
+
+## Play against bots
+
+Story:
+
+- Chat with some teacher
+- Ask for play
+- Teacher will ask White or Black?
+- User will select theirs
+- Teacher will ask for time
+- If user say yes then clock UI appears
+- Game restarts (if  user selected black then board rotates )
+- When is bot turn the backend is called and random chat from bot is expected for "thinking"
+- Play until end.
+
+## Analysis
+
+Story: 
+
+- A new Backend interaction to ask the "bar" 
+- API that will return -1 0 +1 to analysis the board
+
+## Lessons
+
+Story:
+
+- Load a lesson
+- Bots speaks as lesson file
+- "Read" user interaction 
+- Bot interacts according to lesson file
+- Play until user learns or quits.

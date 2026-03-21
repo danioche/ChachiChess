@@ -1,0 +1,35 @@
+# Chess Lesson file
+#+Title: Checkmate on promotions
+#+Description: This lessons is to illustrate promotion checks and check mates
+#+Author: Daniel Pedroche
+#+Language: en
+#+Avatar: teachers_danioche
+
+#+StartingPosition: "8/k1P1q3/8/8/8/1KP5/8/8 w - - 0 1"
+
+#+Begin_teacher
+
+When the pawn gets to the last rank, it can turn into any other piece except a king.
+You almost always want to promote to a queen, the most powerful piece.
+
+#+End_teacher
+
+#+Begin_tips
+
+- A fun but rare exception—promoting into a royal knight fork.
+
+#+End_tips
+
+#+Begin_move_list
+
+PGN: 1. c8=N+ *
+Teacher: 👏🏻👏🏻👏🏻👏🏻 🎉🥳🎉🥳 That´s correct, you found the checkmate, this is called the Back rank (or Corridor) mate.
+
+
+#+End_move_list
+
+#+Begin_nok_chats
+
+- Not exactly but you can do it! Camon!
+
+#+End_nok_chats

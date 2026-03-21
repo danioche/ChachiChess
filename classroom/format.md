@@ -52,3 +52,8 @@ This will let the engine know which board should be setted. If not declared the 
 ### 
 
 
+## Utils for lessons
+
+FEN viewer - compose:
+
+- https://www.redhotpawn.com/chess/chess-fen-viewer.php

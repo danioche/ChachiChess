@@ -34,9 +34,8 @@ def lesson():
 
     # Lets get the current PGN
     if request.method == 'GET':
-        pgn = request.args.get('pgn')
-    
-    print( "I got this pgn: ", pgn )
+        name = request.args.get('name')
+        lesson_file = name + ".chl"
 
     test_path = os.path.join(os.path.dirname(__file__), 'classroom', teacher, 'lessons', lesson_file )
     if os.path.exists(test_path):

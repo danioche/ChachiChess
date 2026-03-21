@@ -9,11 +9,13 @@ ChachiChess is a simple, interactive chessboard web application. It displays a c
 - Supports custom square size via parameter
 - Loads chess positions from FEN strings
 - Displays chess pieces using configurable image themes
-- Drag-and-drop interface for moving pieces
+- Drag-and-drop interface for moving pieces also clicks!
 - Sounds added 
 - Time Machine to check your movements
 - Engine integrated at backend level, integrated with FE/UI
 - Chess Clock added (basic)
+- Bot moves if you kindly ask! (any position, any moment)
+- Lessons!
 
 ## Usage
 
@@ -66,7 +68,8 @@ Currently working on:
 
 List of known bugs to work on:
 
-- Sometimes random allowed movements outside the board. Nice :D 
+- Sometimes random allowed movements outside the board. Nice :D
+- Improve the responsiveness! (touch and sizes) 
 
 List of things that I will love to add:
 
@@ -82,7 +85,7 @@ List of things that I will love to add:
 
 # Ideas for future implementations
 
-# Patrick - Bob Squarepants Teachers
+## Patrick - Bob Squarepants Teachers
 
 Story:
 - Very dummy teachers that moves randomly 

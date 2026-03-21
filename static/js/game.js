@@ -60,6 +60,8 @@ let kingAttacked = { color: 'w', checked: false, row: 0, col:0 };
 let scoreBoard = { w:{ points: 0, pieces: [] },
                    b:{ points: 0, pieces: [] } };
 let g_move_to_play = ""; // What should I play move, check, checkmate, draw...?
+let g_player_promoting = false; // Flag that user movement is not final - Only for lessons
+let g_player_moving = false; // Flag to check if player is still to decide where to click to move - click only hack
 
 // Board logic =================================================================
 
@@ -78,7 +80,7 @@ function resetGame(){
     isBoardFlipped = false;
     moveLog.length = 0;
     scoreBoard = { w:{ points: 0, pieces: [] }, b:{ points: 0, pieces: [] } };
-    timeMachine = []; timeMachine.push( initialFEN ); timeMachineStep = 0;
+    timeMachine = []; timeMachine.push( { board: initialFEN, score: scoreBoard, moving: whosMoving } ); timeMachineStep = 0;
     renderChessBoard(boardSize, boardArray);
     updatePGNTextArea();
     updateScoreboard();
@@ -97,7 +99,7 @@ function resetGamewFEN( lFEN ){
     isBoardFlipped = false;
     moveLog.length = 0;
     scoreBoard = { w:{ points: 0, pieces: [] }, b:{ points: 0, pieces: [] } };
-    timeMachine = []; timeMachine.push( lFEN ); timeMachineStep = 0;
+    timeMachine = []; timeMachine.push( { board: lFEN, score: scoreBoard, moving: whosMoving } ); timeMachineStep = 0;
     renderChessBoard(boardSize, boardArray);
     updatePGNTextArea();
     updateScoreboard();
@@ -190,8 +192,12 @@ function renderChessBoard(squareSize = 64, boardArrayParam = null) {
         // Squares
         for (let col = 0; col < 8; col++) {
             const square = document.createElement('div');
+
             if(isBoardFlipped) square.id = files[7-col]+(boardRowIdx+1);
             else square.id = files[col]+(8-boardRowIdx);
+            
+            
+
             square.className = 'chess-square ' + ((row + col) % 2 === 0 ? 'white' : 'black') + " grabbing";
             square.dataset.row = boardRowIdx;
             square.dataset.col = col;
@@ -208,6 +214,7 @@ function renderChessBoard(squareSize = 64, boardArrayParam = null) {
 
                 return performMove(square, squareSize, e);
             });
+
 
             // Touch support for drop
             square.addEventListener('touchend', function(e) {
@@ -230,6 +237,8 @@ function renderChessBoard(squareSize = 64, boardArrayParam = null) {
 
             if (boardArray && boardArray[boardRowIdx] && boardArray[boardRowIdx][col]) {
                 const piece = boardArray[boardRowIdx][col];
+                
+
                 const img = document.createElement('img');
                 img.src = piece.src;
                 img.alt = piece.name;
@@ -246,6 +255,22 @@ function renderChessBoard(squareSize = 64, boardArrayParam = null) {
                     draggedFrom = { row: boardRowIdx, col: col };
                     
                     movePiece(piece, draggedFrom);
+                });
+
+
+                // Add the click event to the piece
+                square.addEventListener('click', function(e) {
+                    isCapture = document.getElementById(square.id).className.indexOf("capture")>0; 
+
+                    console.log( isCapture );
+
+                    if(isCapture){
+                        performMove( square, squareSize, e);
+                    }
+                    else{
+                        draggedFrom = { row: boardRowIdx, col: col };
+                        movePiece(piece, draggedFrom);
+                    } 
                 });
 
                 // Touch support for drag
@@ -305,9 +330,12 @@ function renderChessBoard(squareSize = 64, boardArrayParam = null) {
 }
 
 // Needs the info from the "target" square
-function performMove(square,squareSize,e){
+function performMove(square,squareSize=64,e){
 
-    // console.log( "Moves available pending to confirm: " + allowedMovesPendingToConfirm.length );
+    console.log("performMove is called");
+    console.log( "Moves available pending to confirm: " + allowedMovesPendingToConfirm.length );
+
+    g_player_moving =  false;
 
     if (allowedMovesPendingToConfirm.length==0) return;
 
@@ -324,7 +352,9 @@ function performMove(square,squareSize,e){
         const to = { row: parseInt(square.dataset.row), col: parseInt(square.dataset.col) };
         const isAllowed = allowedMovesPendingToConfirm.some(m => m.row === to.row && m.col === to.col);
         if (!isAllowed) {
-            // Invalid move, ignore
+            // Not allowed - clearing
+            draggedFrom=null; allowedMovesPendingToConfirm = [];
+            g_player_moving = false;        
             clearAllowedMoves();
             return;
         }   
@@ -341,6 +371,7 @@ function performMove(square,squareSize,e){
             (boardArray[from.row][from.col].name[1]==='P' && boardArray[from.row][from.col].name[0] ==='b' && to.row === 7 )
         )  
         {
+            g_player_promoting = true;
             showPromotionModal(e, 
                                 /* Piece generation on the fly */ 
                                 { name: boardArray[from.row][from.col].name, row: to.row, col: to.col });
@@ -412,12 +443,19 @@ function performMove(square,squareSize,e){
 
 }
 
-
 // CORE: Main movement function 
 function movePiece(piece, position) {
 
+    console.log(`movePiece is called ${piece.name} - ${piece.row}-${piece.col}.`);
+
+
+    g_player_moving = true;
+
     if(piece.name[0] != currentTurn()){
         // console.log("Not your turn to move");
+        draggedFrom=null; allowedMovesPendingToConfirm = [];
+        g_player_moving = false;
+        clearAllowedMoves();
         return;
     } 
 
@@ -524,12 +562,13 @@ function checkKingStatus( enemy = currentTurn()==='w' ? 'b': 'w' ){
 
 // Renders the allowed moves as dots on the board
 function renderAllowedMoves(moves) {
+    
     clearAllowedMoves();
     if (moves.length === 0) return; 
     const container = document.getElementById('chess-board-container');
     moves.forEach(move => {
         
-        // console.log("Allowed move:", move);
+        console.log("Allowed move:", move);
 
         if (isBoardFlipped){
             // row and col need to be trasposed to match the flipped board
@@ -546,6 +585,12 @@ function renderAllowedMoves(moves) {
             dot.id = `move-dot-${move.row}-${move.col}-${move.capture ? 'capture' : 'normal'}-${move.castling ? move.castling : ''}`;
             square.appendChild(dot);
 
+            square.addEventListener("click", function(e){
+                
+                performMove(square, squareSize=64, e);
+            }
+            );
+
             if ( move.capture===true || move.enpassant===true ) {
                 square.className += " capture";
             }
@@ -561,6 +606,8 @@ function promotionFinalle(piece,choose){
 
     // console.log("Piece:" + piece + " Choose:"+ choose);
     let promotedName = piece.name[0] + choose;
+    g_player_promoting = false; 
+    
     // TODO: hardcoded path is not good, change!
     boardArray[ piece.row ][ piece.col ] = { name: promotedName, src: './static/themes/default/pieces/'+ promotedName+'.png' }
 
@@ -858,17 +905,35 @@ function logMove(from, to, piece) {
 function timeMachineDo( time=0 ){
 
     if (time==0){
-        timeMachine.push(  boardArrayToFEN(boardArray) );
+        timeMachine.push( { board: boardArrayToFEN(boardArray), score: JSON.parse(JSON.stringify( scoreBoard )), moving: whosMoving } );
         timeMachineStep = timeMachine.length - 1;
     }else{
         var newPos = timeMachineStep + time;
+
+        if ( newPos==0 ){
+            // Status 0
+            boardArray = startBoard;
+            scoreBoard = { w:{ points: 0, pieces: [] },
+                           b:{ points: 0, pieces: [] } };
+            whosMoving = 0;
+
+            return;
+        } 
+
         if ( newPos >= 0 && newPos < timeMachine.length ) timeMachineStep += time;
         else return;
-        // console.log(  timeMachine[ timeMachineStep ] );
-        boardArray = fenToBoardArray( timeMachine[ timeMachineStep ] );
+
+        console.log(newPos);
+
+        console.log(  timeMachine[ timeMachineStep ].board );
+        boardArray = fenToBoardArray( timeMachine[ timeMachineStep ].board );
+        scoreBoard = timeMachine[ timeMachineStep ].score; 
+        whosMoving = timeMachine[ timeMachineStep ].moving;
+
         // Update visuals
         renderChessBoard(boardSize,boardArray);
         updatePGNTextArea();
+        updateScoreboard();
     }
 
     document.getElementById('fwd').disabled = document.getElementById('bwd').disabled = true;
@@ -1129,84 +1194,3 @@ async function nextMoveAsk(){
 
 }
 
-
-// Lesson integration - Game engine injected with a lesson
-
-// Note: 
-// The below is dependent on logMove, this code needs to be interpreted
-// once logMove is on memory with all the stuff!
-
-const pre_lesson_logMove = logMove;
-let lesson_allowed_moves = []; 
-let lesson_tips = [];
-let lesson_nok_chats = [];
-async function lessonWorker(){
-
-    pgn = document.getElementById( "pgn-area" ).value;
-    url = window.location + "/lesson?pgn="+pgn;
-
-    try {
-        const response = await fetch(url);
-        if (!response.ok) {
-          throw new Error(`Response status: ${response.status}`);
-        }
-
-        result = await response.text();
-        
-        obj_Lesson = JSON.parse(result);
-
-        console.log( obj_Lesson.metadata.StartingPosition );
-  
-    } catch (error) {
-        console.error( "Error en lessonWorker:"+ error.message );
-    }
-
-    // First lest load de new starting position for the lesson
-    resetGamewFEN( obj_Lesson.metadata.StartingPosition );
-
-    // Intro for the lesson
-    intro = "This is the <b>" + obj_Lesson.metadata.Title + "</b> lesson by " + obj_Lesson.metadata.Author + "." +
-            " " + obj_Lesson.metadata.Description + "<br>" + 
-            " Let's go!";
-            
-    addBotMesage ( intro );
-
-    // Load the lesson moves on the global array / bufffer
-    // Not a reference, a copy of the values
-    let lesson_allowed_moves =  JSON.parse(JSON.stringify( obj_Lesson.move_cases ));
-    let lesson_tips = JSON.parse(JSON.stringify( obj_Lesson.tips ));
-    let lesson_nok_chats = JSON.parse(JSON.stringify( obj_Lesson.nok_chats ));
-
-    // Injection for logMove! 
-    // I need to hack logMove function to check if the movement is right
-
-    logMove = function( from, to, piece ){
-
-        // After the user moves we will update every thing
-        pre_lesson_logMove(from, to, piece);
-
-        // But the move could be "wrong" according to the lesson if so
-        // we should go back!...and undo the move! Thanks to the time-travel machine!
-        document.getElementById('chess-board-timeMachine').style.display = "block";
-
-        // Current PGN on the board
-        currentPGN = document.getElementById('pgn-area-moves').value;
-
-        // Lets see all the moves and chat with the user
-        its_a_move = false;
-        for( i=0; i<lesson_allowed_moves.length; i++ ){
-
-            if( currentPGN.trim() == lesson_allowed_moves[i].pgn.trim() ){
-
-                addBotMesage( lesson_allowed_moves[i].teacher+"" );
-                its_a_move = true;
-            }
-        }
-
-        if (!its_a_move){
-            addBotMesage( lesson_nok_chats[0] );
-            addBotMesage( lesson_tips[0] );
-        }
-        
-    }
-}

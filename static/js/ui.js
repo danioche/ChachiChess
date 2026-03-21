@@ -89,6 +89,14 @@ function updatePGNTextArea() {
 
     document.getElementById('pgn-area-moves').value = pgn_moves;
     document.getElementById('pgn-area').value = pgn;
+
+    // Watch out! we are on lesson mode, with this PGN we will need to check
+    // the status, let's call to lesson module.
+    if (g_in_lesson_game && !g_player_promoting && lesson_allowed_moves && lesson_allowed_moves.length>0){
+
+        // We are on a lesson, let's check
+        lessonStep();
+    }
 }
 
 // Update PGN area when player names change

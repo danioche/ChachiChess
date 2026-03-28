@@ -143,7 +143,7 @@ function fenToBoardArray(fen) {
 
 // CORE: Main function to render the chess board 
 // TODO: Refactor this in initialization funtion and movement / rendering function 
-function renderChessBoard(squareSize = 64, boardArrayParam = null) {
+function renderChessBoard(squareSize = boardSize, boardArrayParam = null) {
     // Set CSS variables for square and label size
     document.documentElement.style.setProperty('--square-size', squareSize + 'px');
     document.documentElement.style.setProperty('--label-size', Math.round(squareSize * 0.4) + 'px');
@@ -257,7 +257,6 @@ function renderChessBoard(squareSize = 64, boardArrayParam = null) {
                     movePiece(piece, draggedFrom);
                 });
 
-
                 // Add the click event to the piece
                 square.addEventListener('click', function(e) {
                     isCapture = document.getElementById(square.id).className.indexOf("capture")>0; 
@@ -330,7 +329,7 @@ function renderChessBoard(squareSize = 64, boardArrayParam = null) {
 }
 
 // Needs the info from the "target" square
-function performMove(square,squareSize=64,e){
+function performMove(square,squareSize=boardSize,e){
 
     console.log("performMove is called");
     console.log( "Moves available pending to confirm: " + allowedMovesPendingToConfirm.length );
@@ -582,12 +581,13 @@ function renderAllowedMoves(moves) {
             dot.src = '/static/themes/default/pieces/slot.png';
             dot.alt = "Allowed Move!"
             dot.className = 'move-dot';
+            dot.width = boardSize;
             dot.id = `move-dot-${move.row}-${move.col}-${move.capture ? 'capture' : 'normal'}-${move.castling ? move.castling : ''}`;
             square.appendChild(dot);
 
             square.addEventListener("click", function(e){
                 
-                performMove(square, squareSize=64, e);
+                performMove(square, squareSize=boardSize, e);
             }
             );
 
@@ -611,8 +611,7 @@ function promotionFinalle(piece,choose){
     // TODO: hardcoded path is not good, change!
     boardArray[ piece.row ][ piece.col ] = { name: promotedName, src: './static/themes/default/pieces/'+ promotedName+'.png' }
 
-    // TODO: hardcoded 64 is not good, remove!
-    renderChessBoard( 64, boardArray);
+    renderChessBoard( boardSize, boardArray);
 
     // Now we should log the correct movement we should modify the Log
     moveLog[ moveLog.length - 1 ] = moveLog[ moveLog.length-1 ] + "=" + choose;
@@ -881,6 +880,7 @@ function updateScoreboard() {
 
 // Helper to set board square size and re-render
 function setChessBoardSize(size) {
+    boardSize = size;
     renderChessBoard(size, boardArray);
 }
 
@@ -924,8 +924,9 @@ function timeMachineDo( time=0 ){
         else return;
 
         console.log(newPos);
-
         console.log(  timeMachine[ timeMachineStep ].board );
+
+        // Update the board with the status on the timeMachine
         boardArray = fenToBoardArray( timeMachine[ timeMachineStep ].board );
         scoreBoard = timeMachine[ timeMachineStep ].score; 
         whosMoving = timeMachine[ timeMachineStep ].moving;
@@ -936,7 +937,9 @@ function timeMachineDo( time=0 ){
         updateScoreboard();
     }
 
+    // Let's update the controls
     document.getElementById('fwd').disabled = document.getElementById('bwd').disabled = true;
+
     // Length > 0  
     if (timeMachine.length > 0){
         // We must enable back, now we have movements
@@ -1190,7 +1193,30 @@ async function nextMoveAsk(){
     } catch (error) {
         console.error(error.message);
     }
-  
+}
+
+// Auxiliar function for Bots and Teachers to move
+function doUCIMove( lMove ){
+    // Parse UCI move (e.g., "e2e4")
+    const uciMove = lMove.trim();
+    let fromCol = uciMove.charCodeAt(0) - 'a'.charCodeAt(0);
+    let fromRow = 8 - parseInt(uciMove[1]);
+    let toCol = uciMove.charCodeAt(2) - 'a'.charCodeAt(0);
+    let toRow = 8 - parseInt(uciMove[3]);
+
+    // Get the piece and perform the move
+    const piece = boardArray[fromRow][fromCol];
+    if (piece) {
+        // console.log("Piece: "+ piece.name + " from: "+ fromRow +","+ fromCol + " to: "+ toRow + ","+ toCol + " targetId: "+ uciMove.substring(2));
+        if (isBoardFlipped) draggedFrom = { row: 7-fromRow, col: 7-fromCol };
+        else draggedFrom = { row: fromRow, col: fromCol };
+
+        const targetSquare = document.getElementById(uciMove.substring(2));
+        if (targetSquare) {
+            allowedMovesPendingToConfirm = allowedMoves({row:fromRow,col:fromCol}, piece);
+            performMove(targetSquare, boardSize, targetSquare);
+        }
+    }
 
 }
 

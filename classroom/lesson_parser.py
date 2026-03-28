@@ -101,9 +101,11 @@ class Lesson:
                 p = p.strip()
                 if not p:
                     continue
-                # try to extract PGN: and Teacher:
+                # Extract the values on the block
                 pgn = None
                 teacher_answer = None
+                new_position = None
+                move = None
                 # find lines like 'PGN: 1. Rc8#' and 'Teacher: ...'
                 for line in p.splitlines():
                     ln = line.strip()
@@ -111,12 +113,18 @@ class Lesson:
                         pgn = ln.partition(':')[2].strip()
                     elif ln.lower().startswith('teacher:'):
                         teacher_answer = ln.partition(':')[2].strip()
+                    elif ln.lower().startswith('new position:'):
+                        new_position = ln.partition(':')[2].strip()
+                    elif ln.lower().startswith('move:'):
+                        move = ln.partition(':')[2].strip()
                 case_id += 1
                 lesson.move_cases.append({
                     'id': case_id,
                     # 'raw': p,
                     'pgn': pgn,
-                    'teacher': teacher_answer
+                    'teacher': teacher_answer,
+                    'new_position': new_position,
+                    'move': move
                 })
 
 

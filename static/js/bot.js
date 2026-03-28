@@ -37,7 +37,13 @@ let corpusBot = [
       intent: "estudiar",
       chat_en: [ "Claro! Estudiemos!", "Venga! Vamos con una lección!" ],
       action: [ "lessonWorker()" ]
+    },
+    { intent: "retry",
+      chat_en: [ "Quieres volver a intentarlo?", "Lo intentamos de nuevo?" ],
+      question: true,
+      action: [ "addBotMesage('OK reiniciamos...')", "lessonWorker()" ] 
     }
+
 ]; 
 
 // Understanding the user by keywords and translating to intents
@@ -132,7 +138,7 @@ function addBotMesage( lmsg ){
     const msg = lmsg+"";
     if (msg) {
         const div = document.createElement('div');
-        div.innerHTML = msg;
+        div.innerHTML = '<img src="/static/themes/default/teachers/daniocheChessTeacher_avatar2.png" alt="Teacher Avatar" style="vertical-align:middle; border-radius:50%; margin-right:6px;" width="32px">' + msg;
         div.style.margin = '6px 0';
         div.style.padding = '6px 10px';
         div.style.textAlign = 'right';

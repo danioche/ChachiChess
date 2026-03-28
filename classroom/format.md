@@ -41,6 +41,15 @@ Tips, a list of tips normally exposing options and opportunities on the current 
 
 This is a list with cases that are the movements after players move. Once the player has move the system will check with every case comparing the game play PGN and the expected PGN and the teacher will respond with the prompt indicated just after the PGN.
 
+### Move List block
+
+This is a special block for the lesson, so we can find the following:
+
+- PGN: Will show the specific line that we are or we are expecting
+- Teacher: Here the teacher will speack or guide to the user with some recomendations or even tips. When user fails the nok_chats will be prompted to the user.
+- Move: Here is the teacher that performs a move when the the PGN position is read from the board.
+- New position: Is a FEN new board, that will be loaded once that user reaches the PGN (this opens will reset the counter of the PGN).
+
 ## 
 
 ### StartingPosition

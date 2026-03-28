@@ -9,10 +9,11 @@ let g_in_lesson_game = false;
 let lesson_allowed_moves = []; 
 let lesson_tips = [];
 let lesson_nok_chats = [];
+
 async function lessonWorker(){
 
     pgn = document.getElementById( "pgn-area" ).value;
-    url = window.location + "/lesson?name=complexLesson";
+    url = window.location + "/lesson?name=pastor";
     
 
     try {
@@ -69,14 +70,29 @@ function lessonStep(){
         for( i=0; i<lesson_allowed_moves.length; i++ ){
 
             if( currentPGN.trim() == lesson_allowed_moves[i].pgn.trim() ){
-
+                
                 addBotMesage( lesson_allowed_moves[i].teacher+"" );
                 its_a_move = true;
+
+                if( lesson_allowed_moves[i].move ){
+                    console.log( "Trying to move to: " + lesson_allowed_moves[i].move );
+                    doUCIMove( lesson_allowed_moves[i].move );
+                }
+
+                if( lesson_allowed_moves[i].new_position ){
+                    // A new position is needed, we need to restart the board
+                    resetGamewFEN( lesson_allowed_moves[i].new_position );
+                }
             }
         }
 
+        /*
         if (!its_a_move){
-            addBotMesage( lesson_nok_chats[0] );
-            addBotMesage( lesson_tips[0] );
-        }
+            let fails = ["🤦‍♂️","👎","😵"];
+            let tips = ["💡","☝️🤓","💡🤓"];
+            addBotMesage( fails[ Math.floor(Math.random()*fails.length-1) ] + " " + lesson_nok_chats[0] );
+            addBotMesage( tips[ Math.floor(Math.random()*tips.length-1) ] + " " + lesson_tips[0] );
+
+            // addBotMesage( botSpeaks( 'retry' ) );
+        }*/
 }

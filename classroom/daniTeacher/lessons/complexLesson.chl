@@ -22,9 +22,26 @@ You almost always want to promote to a queen, the most powerful piece.
 
 #+Begin_move_list
 
-PGN: 1. c8=N+ *
-Teacher: 👏🏻👏🏻👏🏻👏🏻 🎉🥳🎉🥳 That´s correct, you found the checkmate, this is called the Back rank (or Corridor) mate.
+PGN: 1. *
+Teacher: You turn
 
+PGN: 1. c8=N+ *
+Teacher: 👏🏻👏🏻👏🏻👏🏻 🎉🥳🎉🥳 is a fork of the king & queen, which is better than c8=Q, which nets 8 points.
+Move: a7b7
+
+PGN: 1. c8=N+ Ka7b7 *
+Teacher: Ok, let's hide
+
+PGN: 1. c8=N+ Ka7b7 2. Nc8xe7 *
+Teacher: 👏🏻👏🏻👏🏻👏🏻 With the knight fork, after 1…Kb7 2.Nxe7, white’s net point gain is 11. Well done! Let's try other example. Look carefully, avoid the stealmate!
+New position: 8/4KP1k/6p1/6P1/8/8/8/8 w - - 0 1
+
+PGN: 1. f8=Q *
+Teacher: Oh! no! you fail! This poition is a StealMate! Try again!
+New position: 8/4KP1k/6p1/6P1/8/8/8/8 w - - 0 1
+
+PGN: 1. f8=R *
+Teacher: Perfect! this is one way to win! Brilliant!
 
 #+End_move_list
 
@@ -33,3 +50,4 @@ Teacher: 👏🏻👏🏻👏🏻👏🏻 🎉🥳🎉🥳 That´s correct, you 
 - Not exactly but you can do it! Camon!
 
 #+End_nok_chats
+

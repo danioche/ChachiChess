@@ -113,7 +113,7 @@ document.getElementById('flip-board-btn').onclick = function() {
     isBoardFlipped = !isBoardFlipped;
     boardArray = fenToBoardArray(initialFEN);
     moveLog.length = 0;
-    renderChessBoard(64, boardArray);
+    renderChessBoard(boardSize, boardArray);
     updatePGNTextArea();
 }
 
@@ -206,6 +206,19 @@ function removeNotification(notification) {
     }, 300);
 }
 
+
+function detectMobileAndResizeBoard() {
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    if (isMobile) {
+        boardSize = 35;
+        renderChessBoard(boardSize, boardArray);
+    }
+}
+
+// Call on page load
+window.addEventListener('load', detectMobileAndResizeBoard);
+// Call on window resize for responsiveness
+window.addEventListener('resize', detectMobileAndResizeBoard);
 
 // Initial PGN area fill
 updatePGNTextArea();

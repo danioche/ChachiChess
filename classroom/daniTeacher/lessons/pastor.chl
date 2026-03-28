@@ -1,0 +1,45 @@
+# Chess Lesson file
+#+Title: Jaque pastor
+#+Description: Esta es una lección para aprender a hacer el Jaque Mate pastor
+#+Author: Daniel Pedroche
+#+Language: es
+#+Avatar: teachers_danioche
+
+#+StartingPosition: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+
+#+Begin_teacher
+
+Una jugada que tienes que hacer para detectar si tienes o no a una persona ajena al ajedrez. Y sobre todo para no caer en él.
+
+#+End_teacher
+
+#+Begin_tips
+
+- Algo para practicar
+
+#+End_tips
+
+#+Begin_move_list
+
+PGN: 1. e4 *
+Teacher: Bien, veamos si te acuerdas...
+Move: e7e5
+
+PGN: 1. e4 e5 2. Bf1c4 *
+Teacher: Genial, ahora muevo
+Move: b8c6
+
+PGN: 1. e4 e5 2. Bf1c4 Nb8c6 3. Qd1h5 *
+Teacher: Estás cerca!! Vamos a ver...
+Move: g8f6
+
+PGN: 1. e4 e5 2. Bf1c4 Nb8c6 3. Qd1h5 Ng8f6 4. Qh5xf7# 
+Teacher: Genial! Lo encontraste!!!
+
+#+End_move_list
+
+#+Begin_nok_chats
+
+- Not exactly but you can do it! Camon!
+
+#+End_nok_chats
